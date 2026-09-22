@@ -406,7 +406,38 @@ EventFinder does not require:
 
 Open-Meteo and OpenStreetMap/Overpass are accessed directly by the Android app.
 
-### 4. Build & install
+### 4. Enable Google sign-in (SSO)
+
+The app builds and runs **without** any Google configuration — the "Continue with Google"
+button simply shows a "not configured" message until a client ID is provided. To enable the
+real SSO flow (FR-01):
+
+1. In the [Google Cloud Console](https://console.cloud.google.com/) create a project and
+   configure the **OAuth consent screen**:
+   - User type: **External** (testing mode is fine for grading)
+   - Under **Test users**, add every Gmail account that will sign in during testing — while
+     the app is in testing mode, only listed accounts are allowed.
+2. Under **Credentials → Create Credentials → OAuth client ID**, create **two** clients:
+   - **Android** — application type *Android*, package name `com.eventfinder.app`, plus the
+     **debug SHA-1** of each machine that will build the app. Get yours with:
+     ```bash
+     ./gradlew signingReport   # copy the SHA1 under Variant: debug
+     ```
+     One Android client can hold many SHA-1 fingerprints, so add each teammate's.
+   - **Web application** — copy its **Client ID** (ends in `.apps.googleusercontent.com`).
+     Despite the app running on Android, Credential Manager's `setServerClientId` expects
+     the **Web** client ID.
+3. Put the Web client ID in `gradle.properties`:
+   ```properties
+   GOOGLE_WEB_CLIENT_ID=<your-web-client-id>.apps.googleusercontent.com
+   ```
+   It is committed, so the whole group shares one client ID. The Android SHA-1s are what
+   vary per machine — add each teammate's debug SHA-1 to the Android client above.
+
+> The device/emulator you test on must be signed into a Gmail account listed as a test
+> user, or sign-in fails with an access error (a config issue, not a code bug).
+
+### 5. Build & install
 
 ```bash
 # Linux / macOS / Git Bash
