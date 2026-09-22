@@ -138,9 +138,7 @@ The image sets `ConnectionStrings__Default` to `/data/eventfinder.db`; override 
 the database somewhere else:
 
 ```bash
-docker run -p 5217:8080 \
-  -e ConnectionStrings__Default="Data Source=/data/custom.db" \
-  -v eventfinder-data:/data eventfinder-api
+docker run -p 5217:8080 -e ConnectionStrings__Default="Data Source=/data/custom.db" -v eventfinder-data:/data eventfinder-api
 ```
 
 ## Deploying to Fly.io
@@ -236,13 +234,26 @@ The app creates that folder on startup if it does not exist.
 root it would try to bundle the Android app too.
 
 Clear the local build output and dev database first, or they are uploaded as well
-(`bin/` alone is around 65 MB):
+(`bin/` alone is around 65 MB).
+
+PowerShell:
+
+```powershell
+cd api/EventFinder.Api
+dotnet clean
+Remove-Item eventfinder.db* -Force -ErrorAction SilentlyContinue
+```
+
+bash / zsh:
 
 ```bash
 cd api/EventFinder.Api
 dotnet clean
 rm -f eventfinder.db eventfinder.db-shm eventfinder.db-wal
 ```
+
+> Windows PowerShell 5.1 has no `&&` operator — run each line separately, or join
+> them with `;`.
 
 Then:
 
