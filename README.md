@@ -437,6 +437,16 @@ real SSO flow (FR-01):
 > The device/emulator you test on must be signed into a Gmail account listed as a test
 > user, or sign-in fails with an access error (a config issue, not a code bug).
 
+**If sign-in reports that Google had no account to offer**, the cause is usually *not* a
+missing account. Credential Manager raises the same `NoCredentialException` when:
+
+- the building machine's **debug SHA-1 is not on the Android OAuth client** — each
+  teammate's is different, so add every one;
+- the signed-in account is **not listed as a test user** on the consent screen; or
+- the device genuinely has no Google account.
+
+`adb logcat -s EventFinder` prints the underlying Google message, which distinguishes them.
+
 ### 5. Build & install
 
 ```bash

@@ -82,7 +82,12 @@ class GoogleSignInClient(private val context: Context) {
             AppLogger.i(tag, "Google sign-in cancelled by the user")
             GoogleSignInResult.Cancelled
         } catch (e: NoCredentialException) {
-            AppLogger.w(tag, "No Google account available on this device: ${e.message}")
+            // Credential Manager reports "no credential" for several distinct
+            // causes: no Google account on the device, this build's signing
+            // certificate SHA-1 not registered on the Android OAuth client, or
+            // the account not being listed as a test user while the consent
+            // screen is in testing mode. The message below carries the detail.
+            AppLogger.w(tag, "Google returned no credential: ${e.message}")
             GoogleSignInResult.NoAccount
         } catch (e: GetCredentialException) {
             AppLogger.e(tag, "Google sign-in failed", e)
