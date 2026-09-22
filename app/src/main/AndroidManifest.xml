@@ -18,6 +18,30 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!--
+      Android 11 (API 30) filters which other apps we can see. Without these
+      declarations the "Get directions" and "Share" buttons cannot find a maps
+      or browser app to hand the intent to, so tapping them does nothing.
+      See: https://developer.android.com/training/package-visibility
+    -->
+    <queries>
+        <!-- Map apps that handle geo: directions links -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+        <!-- Browsers, used as the fallback when no map app is installed -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <!-- Apps that can receive a shared event -->
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="text/plain" />
+        </intent>
+    </queries>
+
     <application
         android:name=".EventFinderApp"
         android:allowBackup="false"

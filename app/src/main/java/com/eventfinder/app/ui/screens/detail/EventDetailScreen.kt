@@ -1,5 +1,7 @@
 package com.eventfinder.app.ui.screens.detail
 
+import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.BackHandler
@@ -70,10 +72,12 @@ import coil.compose.AsyncImage
 import com.eventfinder.app.R
 import com.eventfinder.app.data.repository.describeWeatherCode
 import com.eventfinder.app.di.AppContainer
+import com.eventfinder.app.domain.model.Event
 import com.eventfinder.app.domain.model.RsvpStatus
 import com.eventfinder.app.ui.components.categoryLabel
 import com.eventfinder.app.ui.components.resolve
 import com.eventfinder.app.ui.components.LoadingView
+import com.eventfinder.app.utils.AppLogger
 import com.eventfinder.app.utils.DateTimeUtils
 
 /**
@@ -334,66 +338,12 @@ fun EventDetailScreen(
                                 }
                                 OutlinedButton(
                                     onClick = {
-                                        val latitude = event.latitude
-                                        val longitude = event.longitude
-                                        if (latitude == null || longitude == null) {
-                                            // No coordinates: fall back to a text-based maps search.
-                                            val query = Uri.encode(
-                                                listOf(event.venueName, event.address)
-                                                    .filter { it.isNotBlank() }
-                                                    .joinToString(", ")
+                                        val opened = openDirections(context, event)
+                                        if (!opened) {
+                                            AppLogger.w(
+                                                "EventDetailScreen",
+                                                "No map or browser app available for directions"
                                             )
-
-
-                                            val searchUri = Uri.parse(
-                                                "https://www.google.com/maps/search/?api=1&query=$query"
-                                            )
-
-
-                                            val searchIntent = Intent(
-                                                Intent.ACTION_VIEW,
-                                                searchUri
-                                            )
-
-
-                                            if (searchIntent.resolveActivity(context.packageManager) != null) {
-                                                context.startActivity(searchIntent)
-                                                return@OutlinedButton
-                                            }
-                                        }
-
-
-                                        val geoUri = Uri.parse(
-                                            "geo:$latitude,$longitude" +
-                                                "?q=$latitude,$longitude(${Uri.encode(event.venueName)})"
-                                        )
-
-
-                                        val intent = Intent(Intent.ACTION_VIEW, geoUri)
-
-
-                                        if (intent.resolveActivity(context.packageManager) != null) {
-                                            context.startActivity(intent)
-                                        } else {
-                                            // geo: intent had no handler; fall back to web search.
-                                            val query = Uri.encode(
-                                                listOf(event.venueName, event.address)
-                                                    .filter { it.isNotBlank() }
-                                                    .joinToString(", ")
-                                            )
-
-
-                                            val fallback = Intent(
-                                                Intent.ACTION_VIEW,
-                                                Uri.parse(
-                                                    "https://www.google.com/maps/search/?api=1&query=$query"
-                                                )
-                                            )
-
-
-                                            if (fallback.resolveActivity(context.packageManager) != null) {
-                                                context.startActivity(fallback)
-                                            }
                                         }
                                     },
                                     modifier = Modifier.weight(1f).height(44.dp)
@@ -477,4 +427,46 @@ private fun WeatherCard(state: EventDetailUiState) {
             }
         }
     }
+}
+/**
+ * Opens the device's map app with directions to [event].
+ *
+ * Tries a `geo:` intent first so any installed map app can handle it, then
+ * falls back to a Google Maps web search. `startActivity` is guarded with
+ * try/catch rather than `resolveActivity`, because from Android 11 the latter
+ * returns null for apps we have not declared in the manifest `<queries>` block
+ * and the button would silently do nothing.
+ *
+ * @return true if a map or browser app was launched.
+ */
+private fun openDirections(context: Context, event: Event): Boolean {
+    val label = listOf(event.venueName, event.address)
+        .filter { it.isNotBlank() }
+        .joinToString(", ")
+
+    val latitude = event.latitude
+    val longitude = event.longitude
+
+    // Preferred: a geo: point, which opens directly on the pin.
+    if (latitude != null && longitude != null) {
+        val geoUri = Uri.parse("geo:$latitude,$longitude?q=$latitude,$longitude(${Uri.encode(label)})")
+        if (startIntent(context, geoUri)) return true
+    }
+
+    // Fallback: search the venue by name on the Google Maps website.
+    if (label.isNotBlank()) {
+        val webUri = Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode(label)}")
+        if (startIntent(context, webUri)) return true
+    }
+
+    return false
+}
+
+/** Starts a VIEW intent for [uri], returning false when no app can handle it. */
+private fun startIntent(context: Context, uri: Uri): Boolean = try {
+    context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+    true
+} catch (e: ActivityNotFoundException) {
+    AppLogger.w("EventDetailScreen", "No activity found for $uri")
+    false
 }
