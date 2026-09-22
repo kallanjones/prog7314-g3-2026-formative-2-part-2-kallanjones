@@ -25,11 +25,13 @@ class EventGeocoder(
     private val cache = ConcurrentHashMap<String, Pair<Double, Double>>()
     private val failedQueries = ConcurrentHashMap.newKeySet<String>()
 
-    private val countryContexts = listOf(
-        "south africa", "cape town", "johannesburg", "durban",
-        "pretoria", "cape town", "stellenbosch", "port elizabeth",
-        "bloemfontein", "polokwane", "mbombela", "east london",
-        "kimberley", "richards bay", "george", "hermanus"
+    /**
+     * Address parts that never identify a place: province abbreviations and
+     * "to be announced" placeholders used by the event feeds.
+     */
+    private val ignoredParts = setOf(
+        "gp", "wc", "kzn", "ec", "mp", "lp", "nw", "nc", "fs",
+        "tba", "tbc", "n/a", "none", "various"
     )
 
     /**
@@ -41,10 +43,9 @@ class EventGeocoder(
      * @return lat/lng pair if found, or null if the location cannot be resolved.
      */
     suspend fun geocode(locationName: String): Pair<Double, Double>? {
-        val query = buildGeocodingQuery(locationName)
-        if (query.isBlank()) return null
-
         val cacheKey = locationName.trim().lowercase()
+        if (cacheKey.isBlank()) return null
+
         cache[cacheKey]?.let { return it }
         if (failedQueries.contains(cacheKey)) return null
 
@@ -54,66 +55,80 @@ class EventGeocoder(
             return coords
         }
 
-        return try {
-            val response = geocodingApi.geocode(name = query, count = 5)
+        // Feed addresses arrive as "VENUE, SUBURB, TOWN, PROVINCE". Open-Meteo
+        // matches place names only, so the full string never resolves; try the
+        // individual parts instead, starting from the town end.
+        for (candidate in placeCandidates(locationName)) {
+            val coords = lookupSouthAfrican(candidate) ?: continue
 
-            // Only accept results that are explicitly South African. Without this
-            // guard a query for "George" could silently resolve to a non-South
-            // African location, placing an event in the wrong country.
-            val result = response.results?.firstOrNull { res ->
-                res.countryCode?.equals("ZA", ignoreCase = true) == true ||
-                    res.country?.equals("South Africa", ignoreCase = true) == true
-            }
-
-            if (result?.latitude != null && result.longitude != null) {
-                val coords = result.latitude to result.longitude
-                cache[cacheKey] = coords
-                failedQueries.remove(cacheKey)
-                geocodeCacheDao?.upsert(
-                    GeocodeCacheEntity(
-                        locationKey = cacheKey,
-                        latitude = coords.first,
-                        longitude = coords.second,
-                        createdAt = System.currentTimeMillis()
-                    )
+            cache[cacheKey] = coords
+            failedQueries.remove(cacheKey)
+            geocodeCacheDao?.upsert(
+                GeocodeCacheEntity(
+                    locationKey = cacheKey,
+                    latitude = coords.first,
+                    longitude = coords.second,
+                    createdAt = System.currentTimeMillis()
                 )
-                AppLogger.d(tag, "Geocoded '$locationName' → ${coords.first}, ${coords.second}")
-                coords
-            } else {
-                failedQueries.add(cacheKey)
-                AppLogger.d(tag, "No South African geocoding result for '$locationName'")
-                null
-            }
-        } catch (e: Exception) {
-            failedQueries.add(cacheKey)
-            AppLogger.w(tag, "Geocoding failed for '$locationName': ${e.message}")
+            )
+            AppLogger.d(tag, "Geocoded '$locationName' via '$candidate' -> ${coords.first}, ${coords.second}")
+            return coords
+        }
+
+        failedQueries.add(cacheKey)
+        AppLogger.d(tag, "No South African geocoding result for '$locationName'")
+        return null
+    }
+
+    /**
+     * Queries Open-Meteo for [query] and returns the first explicitly South
+     * African match. Without the country check a query for "Caledon" resolves
+     * to Canada, placing the event in the wrong country.
+     */
+    private suspend fun lookupSouthAfrican(query: String): Pair<Double, Double>? = try {
+        val response = geocodingApi.geocode(name = query, count = 5)
+
+        val result = response.results?.firstOrNull { res ->
+            res.countryCode?.equals("ZA", ignoreCase = true) == true ||
+                res.country?.equals("South Africa", ignoreCase = true) == true
+        }
+
+        if (result?.latitude != null && result.longitude != null) {
+            result.latitude to result.longitude
+        } else {
             null
         }
+    } catch (e: Exception) {
+        AppLogger.w(tag, "Geocoding failed for '$query': ${e.message}")
+        null
     }
 
-    private fun buildGeocodingQuery(raw: String): String {
-        val cleaned = raw.trim()
-            .replace(Regex("\\s+"), " ")
-            .removePrefix("at ")
-            .removePrefix("near ")
-
-        if (cleaned.isBlank()) return ""
-
-        val lower = cleaned.lowercase()
-
-        if (
-            lower.contains("south africa") ||
-            lower.endsWith(", za") ||
-            lower == "za"
-        ) {
-            return cleaned
-        }
-
-        return "$cleaned, South Africa"
-    }
+    /**
+     * Splits a free-text location into place-name candidates, ordered from the
+     * broadest part (usually the town, written last) to the most specific.
+     * Province codes and placeholders are dropped, and the list is capped so a
+     * single unresolvable address cannot spend many Open-Meteo requests.
+     */
+    internal fun placeCandidates(raw: String): List<String> =
+        raw.split(',')
+            .map { part ->
+                part.replace(Regex("\\s+"), " ")
+                    .trim()
+                    .trim('.', '…', '-', '–')
+                    .trim()
+            }
+            .filter { it.length > 2 && it.lowercase() !in ignoredParts }
+            .reversed()
+            .distinctBy { it.lowercase() }
+            .take(MAX_LOOKUPS_PER_LOCATION)
 
     fun clearCache() {
         cache.clear()
         failedQueries.clear()
+    }
+
+    private companion object {
+        /** Caps the Open-Meteo requests spent on one address. */
+        const val MAX_LOOKUPS_PER_LOCATION = 3
     }
 }

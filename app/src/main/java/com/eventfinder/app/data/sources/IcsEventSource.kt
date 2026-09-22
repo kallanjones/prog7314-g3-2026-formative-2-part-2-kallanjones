@@ -118,10 +118,10 @@ class IcsEventSource(
             }
 
             val uid = props["UID"]?.trim() ?: continue
-            val summary = props["SUMMARY"]?.trim() ?: continue
-            val description = props["DESCRIPTION"]?.trim()?.take(2000) ?: ""
-            val location = props["LOCATION"]?.trim() ?: ""
-            val categories = props["CATEGORIES"]?.trim() ?: ""
+            val summary = props["SUMMARY"]?.let { unescapeIcsText(it) }?.trim() ?: continue
+            val description = props["DESCRIPTION"]?.let { unescapeIcsText(it) }?.trim()?.take(2000) ?: ""
+            val location = props["LOCATION"]?.let { unescapeIcsText(it) }?.trim() ?: ""
+            val categories = props["CATEGORIES"]?.let { unescapeIcsText(it) }?.trim() ?: ""
             val urlProp = props["URL"]?.trim()
 
             val dtStartRaw = props["DTSTART"]?.trim() ?: continue
@@ -400,6 +400,31 @@ class IcsEventSource(
         }
 
         return null
+    }
+
+    /**
+     * Reverses the text escaping defined by RFC 5545 section 3.3.11. ICS feeds
+     * escape commas, semicolons and backslashes inside TEXT values, so a venue
+     * arrives as "TBA\, KZN" and must be restored to "TBA, KZN" before it is
+     * shown to the user or handed to the geocoder.
+     */
+    private fun unescapeIcsText(value: String): String {
+        val sb = StringBuilder(value.length)
+        var i = 0
+        while (i < value.length) {
+            val c = value[i]
+            if (c == '\\' && i + 1 < value.length) {
+                when (val next = value[i + 1]) {
+                    'n', 'N' -> sb.append('\n')
+                    else -> sb.append(next)
+                }
+                i += 2
+            } else {
+                sb.append(c)
+                i++
+            }
+        }
+        return sb.toString()
     }
 
     private fun unfoldIcs(text: String): String {

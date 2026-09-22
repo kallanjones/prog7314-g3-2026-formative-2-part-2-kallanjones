@@ -84,4 +84,39 @@ class EventGeocoderTest {
         assertNotNull(coords)
         assertEquals(-25.75, coords!!.first, 0.001)
     }
+
+    @Test
+    fun `place candidates put the town before the venue and drop the province code`() {
+        val candidates = geocoder().placeCandidates("MAHEM RACEWAY, ZANDFONTEIN, PRETORIA, GP")
+
+        assertEquals(listOf("PRETORIA", "ZANDFONTEIN", "MAHEM RACEWAY"), candidates)
+    }
+
+    @Test
+    fun `place candidates strip trailing ellipsis left by the feed`() {
+        val candidates = geocoder().placeCandidates("MAHEM RACEWAY, PRETORIA……")
+
+        assertEquals(listOf("PRETORIA", "MAHEM RACEWAY"), candidates)
+    }
+
+    @Test
+    fun `place candidates drop placeholder locations`() {
+        assertEquals(emptyList<String>(), geocoder().placeCandidates("TBA, KZN"))
+    }
+
+    @Test
+    fun `geocodes an address by falling back to its town`() = runTest {
+        // The API only knows the town, not the raceway, mirroring Open-Meteo.
+        val coder = geocoder(
+            OmGeocodingResult(
+                name = "Vereeniging", latitude = -26.67, longitude = 27.93,
+                country = "South Africa", countryCode = "ZA"
+            )
+        )
+
+        val coords = coder.geocode("ULTIMATE OUTLAWS, LEEUWKUIL, VEREENIGING")
+
+        assertNotNull(coords)
+        assertEquals(-26.67, coords!!.first, 0.001)
+    }
 }
