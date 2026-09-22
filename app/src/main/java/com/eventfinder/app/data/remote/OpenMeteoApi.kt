@@ -40,8 +40,12 @@ interface OpenMeteoApi {
                 "precipitation_sum,precipitation_probability_max," +
                 "sunrise,sunset,uv_index_max",
 
+        // Open-Meteo rejects (HTTP 400) forecast_days combined with
+        // start_date/end_date — they are mutually exclusive. This is null by
+        // default so it is omitted; the weather lookup always requests a
+        // specific event date via start_date/end_date instead.
         @Query("forecast_days")
-        forecastDays: Int = 7,
+        forecastDays: Int? = null,
 
         @Query("temperature_unit")
         temperatureUnit: String = "celsius",
