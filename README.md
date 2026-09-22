@@ -238,10 +238,14 @@ PublicJsonEventSource ─┘
 
 The base URL is a `BuildConfig` field set in `app/build.gradle.kts`:
 
-| Build type | `API_BASE_URL` |
-| --- | --- |
-| `debug` | `api.base.url` from `local.properties`, else `http://10.0.2.2:5217/` (the host machine as seen from the emulator) |
-| `release` | The deployed HTTPS URL |
+| Build type | `API_BASE_URL` | Set it in |
+| --- | --- | --- |
+| `debug` | `api.base.url`, else `http://10.0.2.2:5217/` (the host machine as seen from the emulator) | `local.properties` — gitignored, so per machine |
+| `release` | `API_BASE_URL_RELEASE`, the deployed Fly.io instance | `gradle.properties` — committed, so shared |
+
+The API is deployed to **Fly.io** from [`api/EventFinder.Api/fly.toml`](api/EventFinder.Api/fly.toml),
+with a volume mounted at `/data` so the SQLite database survives deploys.
+[`api/README.md`](api/README.md#deploying-to-flyio) has the deploy steps.
 
 **Testing on a physical phone:** `10.0.2.2` only works inside the emulator. Put your
 laptop's LAN address in `local.properties` instead — it is gitignored, so each machine

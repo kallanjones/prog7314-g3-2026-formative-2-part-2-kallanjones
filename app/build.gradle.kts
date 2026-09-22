@@ -33,6 +33,20 @@ val debugApiBaseUrl: String = run {
     if (resolved.endsWith("/")) resolved else "$resolved/"
 }
 
+/**
+ * Where release builds look for the API — the deployed instance. Set
+ * `API_BASE_URL_RELEASE` in gradle.properties, which is committed so the whole
+ * team builds against the same deployment.
+ */
+val releaseApiBaseUrl: String = run {
+    val configured = (project.findProperty("API_BASE_URL_RELEASE") as? String)
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+        ?: "https://eventfinder-api.fly.dev/"
+
+    if (configured.endsWith("/")) configured else "$configured/"
+}
+
 android {
     namespace = "com.eventfinder.app"
     compileSdk = 34
@@ -66,8 +80,8 @@ android {
             isDebuggable = true
         }
         release {
-            // Replace with your deployed API URL before submission.
-            buildConfigField("String", "API_BASE_URL", "\"https://eventfinder-api.azurewebsites.net/\"")
+            // The deployed API. Set API_BASE_URL_RELEASE in gradle.properties.
+            buildConfigField("String", "API_BASE_URL", "\"$releaseApiBaseUrl\"")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

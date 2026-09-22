@@ -143,10 +143,80 @@ docker run -p 5217:8080 \
   -v eventfinder-data:/data eventfinder-api
 ```
 
-## Deploying
+## Deploying to Fly.io
 
-The container runs on any host that takes a Docker image — Render, Koyeb, Fly.io,
-Railway, Google Cloud Run. Two things to check on whichever you pick:
+[`fly.toml`](EventFinder.Api/fly.toml) is configured to build the Dockerfile, run in the
+`jnb` (Johannesburg) region, and mount a volume at `/data` so the SQLite database
+survives deploys.
+
+Fly requires a card on file even on the free allowance.
+
+### One-time setup
+
+Install [flyctl](https://fly.io/docs/flyctl/install/), then from `api/EventFinder.Api`:
+
+```bash
+fly auth login
+```
+
+```bash
+fly launch --no-deploy
+```
+
+`fly launch` reads the existing `fly.toml`. Say **no** when it offers to overwrite the
+configuration or add a database — we already have both. App names are globally unique,
+so if `eventfinder-api` is taken it will suggest another; put whatever you accept into
+the `app = ` line of `fly.toml`.
+
+Create the volume the config expects, in the same region:
+
+```bash
+fly volumes create eventfinder_data --size 1 --region jnb
+```
+
+### Deploy
+
+```bash
+fly deploy
+```
+
+Then check it:
+
+```bash
+fly status
+curl https://<your-app>.fly.dev/api/health
+```
+
+Swagger will be at `https://<your-app>.fly.dev/swagger`.
+
+### Point the app at it
+
+Put the deployed URL in `gradle.properties` so release builds use it:
+
+```properties
+API_BASE_URL_RELEASE=https://<your-app>.fly.dev/
+```
+
+To make a **debug** build use the deployed API instead of a local one — handy for
+testing on a phone over mobile data — set it in `local.properties` as well:
+
+```properties
+api.base.url=https://<your-app>.fly.dev/
+```
+
+### Notes
+
+- The machine **scales to zero when idle**, so the first request after a quiet period
+  takes a few seconds to wake. That is normal, and worth knowing before you record the
+  demonstration video.
+- A Fly volume attaches to a **single machine**. Do not scale past one instance, or each
+  would get its own separate database.
+- `fly logs` tails the API's output if something misbehaves.
+
+## Deploying elsewhere
+
+The container runs on any host that takes a Docker image — Render, Koyeb, Railway,
+Google Cloud Run. Two things to check on whichever you pick:
 
 1. **Port.** The image listens on `8080`. Hosts that inject a `$PORT` variable need
    `ASPNETCORE_HTTP_PORTS` set to the same value.
