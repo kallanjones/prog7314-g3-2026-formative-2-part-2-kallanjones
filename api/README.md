@@ -213,6 +213,97 @@ api.base.url=https://<your-app>.fly.dev/
   would get its own separate database.
 - `fly logs` tails the API's output if something misbehaves.
 
+## Deploying to Azure App Service
+
+This is the stack named in the Planning and Design document, and Azure for Students
+covers it. There are two routes; the first needs no Docker at all.
+
+### The one rule that matters on Azure
+
+On App Service Linux, **only `/home` persists**. Anything written elsewhere is wiped
+when the app restarts or redeploys. So the SQLite database must live under `/home`:
+
+```
+ConnectionStrings__Default = Data Source=/home/data/eventfinder.db
+```
+
+The app creates that folder on startup if it does not exist.
+
+### Route A — deploy the code (simplest)
+
+From `api/EventFinder.Api`:
+
+```bash
+az login
+```
+
+```bash
+az webapp up --runtime "DOTNET:8" --sku F1 --name <your-app-name> --resource-group eventfinder-rg --location southafricanorth
+```
+
+`az webapp up` creates the resource group, plan and web app, then builds and deploys.
+The name becomes `https://<your-app-name>.azurewebsites.net`, so it must be globally
+unique.
+
+Then point the database at the persistent share:
+
+```bash
+az webapp config appsettings set --name <your-app-name> --resource-group eventfinder-rg --settings ConnectionStrings__Default="Data Source=/home/data/eventfinder.db"
+```
+
+Redeploy later with `az webapp up` again from the same folder.
+
+### Route B — deploy the container
+
+Build the image in Azure Container Registry (no local Docker needed) and run it:
+
+```bash
+az acr create --name <registry-name> --resource-group eventfinder-rg --sku Basic --admin-enabled true
+```
+
+```bash
+az acr build --registry <registry-name> --image eventfinder-api:latest .
+```
+
+```bash
+az webapp create --name <your-app-name> --resource-group eventfinder-rg --plan <plan-name> --deployment-container-image-name <registry-name>.azurecr.io/eventfinder-api:latest
+```
+
+A container needs two extra settings — the port it listens on, and the flag that mounts
+`/home` into the container:
+
+```bash
+az webapp config appsettings set --name <your-app-name> --resource-group eventfinder-rg --settings WEBSITES_PORT=8080 WEBSITES_ENABLE_APP_SERVICE_STORAGE=true ConnectionStrings__Default="Data Source=/home/data/eventfinder.db"
+```
+
+Without `WEBSITES_ENABLE_APP_SERVICE_STORAGE=true` the container gets its own throwaway
+filesystem and the database resets on every restart.
+
+### Check it
+
+```bash
+curl https://<your-app-name>.azurewebsites.net/api/health
+az webapp log tail --name <your-app-name> --resource-group eventfinder-rg
+```
+
+Swagger will be at `https://<your-app-name>.azurewebsites.net/swagger`. HTTPS is
+provided automatically on `azurewebsites.net`.
+
+### Point the app at it
+
+```properties
+# gradle.properties — used by release builds
+API_BASE_URL_RELEASE=https://<your-app-name>.azurewebsites.net/
+```
+
+### Notes
+
+- **F1 (free)** has no always-on, so the first request after idle is slow — warm it up
+  before recording the demonstration video. It is also capped at 60 CPU-minutes/day. If
+  that bites, **B1** is small enough for the Azure for Students credit.
+- Region `southafricanorth` is Johannesburg. F1 is not available in every region; if it
+  is rejected, try `westeurope`.
+
 ## Deploying elsewhere
 
 The container runs on any host that takes a Docker image — Render, Koyeb, Railway,

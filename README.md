@@ -243,9 +243,16 @@ The base URL is a `BuildConfig` field set in `app/build.gradle.kts`:
 | `debug` | `api.base.url`, else `http://10.0.2.2:5217/` (the host machine as seen from the emulator) | `local.properties` — gitignored, so per machine |
 | `release` | `API_BASE_URL_RELEASE`, the deployed Fly.io instance | `gradle.properties` — committed, so shared |
 
-The API is deployed to **Fly.io** from [`api/EventFinder.Api/fly.toml`](api/EventFinder.Api/fly.toml),
-with a volume mounted at `/data` so the SQLite database survives deploys.
-[`api/README.md`](api/README.md#deploying-to-flyio) has the deploy steps.
+The API ships with a [`Dockerfile`](api/EventFinder.Api/Dockerfile), so it runs on any
+container host. [`api/README.md`](api/README.md) has step-by-step instructions for:
+
+- **[Azure App Service](api/README.md#deploying-to-azure-app-service)** — the stack named in
+  the Part 1 design document; the database lives on the persistent `/home` share.
+- **[Fly.io](api/README.md#deploying-to-flyio)** — configured in
+  [`fly.toml`](api/EventFinder.Api/fly.toml) with a volume mounted at `/data`.
+
+Either way the SQLite file must sit on storage that survives restarts, or the event
+catalogue resets on every deploy.
 
 **Testing on a physical phone:** `10.0.2.2` only works inside the emulator. Put your
 laptop's LAN address in `local.properties` instead — it is gitignored, so each machine

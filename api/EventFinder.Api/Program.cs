@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using EventFinder.Api.Data;
 using EventFinder.Api.Models;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 // EventFinder South Africa REST API.
@@ -27,6 +28,19 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 
 var app = builder.Build();
+
+// SQLite will not create missing directories, and hosts put the writable disk in
+// different places — /data on Fly and Docker, /home/data on Azure App Service.
+// Create the folder first so any of them works without a manual step.
+var dataSource = new SqliteConnectionStringBuilder(connectionString).DataSource;
+if (!string.IsNullOrWhiteSpace(dataSource))
+{
+    var directory = Path.GetDirectoryName(Path.GetFullPath(dataSource));
+    if (!string.IsNullOrEmpty(directory))
+    {
+        Directory.CreateDirectory(directory);
+    }
+}
 
 // Create the database on first run so a fresh deployment needs no manual step.
 using (var scope = app.Services.CreateScope())
