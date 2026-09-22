@@ -57,9 +57,48 @@ list on the next refresh.
 
 The base URL is set per build type in `app/build.gradle.kts` (`API_BASE_URL`).
 
+## Running in Docker
+
+From the repository root:
+
+```bash
+docker build -t eventfinder-api api/EventFinder.Api
+```
+
+```bash
+docker run -p 5217:8080 -v eventfinder-data:/data eventfinder-api
+```
+
+The API is then on <http://localhost:5217/swagger>, and the emulator reaches it at
+`http://10.0.2.2:5217/` — the same address debug builds already use, so no app change
+is needed.
+
+### Why the volume
+
+SQLite is a file. Without `-v eventfinder-data:/data` that file lives in the container
+layer and is destroyed when the container is removed, taking every event with it. The
+named volume keeps it on the host.
+
+The image sets `ConnectionStrings__Default` to `/data/eventfinder.db`; override it to put
+the database somewhere else:
+
+```bash
+docker run -p 5217:8080 \
+  -e ConnectionStrings__Default="Data Source=/data/custom.db" \
+  -v eventfinder-data:/data eventfinder-api
+```
+
 ## Deploying
 
-Publish a self-contained build and upload it to any host that runs .NET 8:
+The container runs on any host that takes a Docker image — Render, Koyeb, Fly.io,
+Railway, Google Cloud Run. Two things to check on whichever you pick:
+
+1. **Port.** The image listens on `8080`. Hosts that inject a `$PORT` variable need
+   `ASPNETCORE_HTTP_PORTS` set to the same value.
+2. **Disk.** If the host's filesystem is ephemeral (most free tiers are), attach a
+   persistent volume mounted at `/data`, or the database resets on every deploy.
+
+Without Docker, publish a plain build and upload it to any host that runs .NET 8:
 
 ```bash
 cd api/EventFinder.Api
