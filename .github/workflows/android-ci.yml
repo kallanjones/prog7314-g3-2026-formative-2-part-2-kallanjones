@@ -18,6 +18,36 @@ permissions:
   contents: read
 
 jobs:
+  api-test:
+    name: Build & test REST API
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore API dependencies
+        run: dotnet restore api/EventFinder.Api.Tests/EventFinder.Api.Tests.csproj
+
+      - name: Build API
+        run: dotnet build api/EventFinder.Api.Tests/EventFinder.Api.Tests.csproj --no-restore --configuration Release
+
+      - name: Run API tests
+        run: dotnet test api/EventFinder.Api.Tests/EventFinder.Api.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=api-tests.trx"
+
+      - name: Upload API test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-test-report
+          path: api/EventFinder.Api.Tests/TestResults
+          if-no-files-found: ignore
+
   build-and-test:
     name: Build & unit test
     runs-on: ubuntu-latest

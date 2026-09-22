@@ -20,7 +20,16 @@ android {
     }
 
     buildTypes {
+        debug {
+            // 10.0.2.2 is the host machine as seen from the Android emulator, so
+            // a locally running `dotnet run` in /api is reachable during development.
+            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:5217/\"")
+            // The local API is plain HTTP; release builds stay HTTPS-only.
+            isDebuggable = true
+        }
         release {
+            // Replace with your deployed API URL before submission.
+            buildConfigField("String", "API_BASE_URL", "\"https://eventfinder-api.azurewebsites.net/\"")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -38,6 +47,8 @@ android {
     }
     buildFeatures {
         compose = true
+        // Exposes API_BASE_URL to Kotlin via BuildConfig.
+        buildConfig = true
     }
     // Compose compiler 1.5.8 is paired with Kotlin 1.9.22 (see official compatibility map).
     composeOptions {

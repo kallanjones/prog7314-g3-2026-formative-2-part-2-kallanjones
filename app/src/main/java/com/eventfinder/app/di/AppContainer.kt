@@ -3,6 +3,7 @@ package com.eventfinder.app.di
 import android.content.Context
 import com.eventfinder.app.data.local.AppDatabase
 import com.eventfinder.app.data.remote.ApiClient
+import com.eventfinder.app.data.remote.EventFinderApi
 import com.eventfinder.app.data.remote.EventGeocoder
 import com.eventfinder.app.data.remote.PublicJsonEventClient
 import com.eventfinder.app.data.repository.AuthRepository
@@ -80,10 +81,19 @@ class AppContainer(context: Context) {
         ApiClient.httpClient(appContext.cacheDir)
     }
 
+    /** Our own EventFinder REST API (the ASP.NET Core service in `/api`). */
+    val eventFinderApi: EventFinderApi by lazy {
+        ApiClient.eventFinderApi(appContext.cacheDir)
+    }
+
     val eventDiscoveryRepository: EventDiscoveryRepository by lazy {
         EventDiscoveryRepository(
             eventDao = database.eventDao(),
-            sources = SouthAfricaEventSources.create(publicJsonEventClient, httpClient),
+            sources = SouthAfricaEventSources.create(
+                client = publicJsonEventClient,
+                httpClient = httpClient,
+                eventFinderApi = eventFinderApi
+            ),
             geocoder = eventGeocoder
         )
     }

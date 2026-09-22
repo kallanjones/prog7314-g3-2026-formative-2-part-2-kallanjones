@@ -1,5 +1,6 @@
 package com.eventfinder.app.data.sources
 
+import com.eventfinder.app.data.remote.EventFinderApi
 import com.eventfinder.app.data.remote.PublicJsonEventClient
 import okhttp3.OkHttpClient
 
@@ -19,9 +20,13 @@ object SouthAfricaEventSources {
 
     fun create(
         client: PublicJsonEventClient,
-        httpClient: OkHttpClient
+        httpClient: OkHttpClient,
+        eventFinderApi: EventFinderApi
     ): List<EventSource> {
         return listOf(
+            // Our own REST API first, so events created in the app come back
+            // through the same ingestion pipeline as the public feeds.
+            EventFinderApiSource(api = eventFinderApi),
             RssEventSource(
                 id = "aticket-rss",
                 displayName = "Aticket South Africa Events",

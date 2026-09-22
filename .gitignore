@@ -31,3 +31,12 @@ lint_output.txt
 temp_compile.txt
 test.txt
 test_output.txt
+
+# ASP.NET Core API build output
+api/**/bin/
+api/**/obj/
+
+# Local SQLite database created at runtime
+*.db
+*.db-shm
+*.db-wal
