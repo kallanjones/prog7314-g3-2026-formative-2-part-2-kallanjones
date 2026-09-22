@@ -231,7 +231,20 @@ The app creates that folder on startup if it does not exist.
 
 ### Route A — deploy the code (simplest)
 
-From `api/EventFinder.Api`:
+`az webapp up` deploys **the directory you run it from**, so run it from
+`api/EventFinder.Api` — the folder holding `EventFinder.Api.csproj`. From the repository
+root it would try to bundle the Android app too.
+
+Clear the local build output and dev database first, or they are uploaded as well
+(`bin/` alone is around 65 MB):
+
+```bash
+cd api/EventFinder.Api
+dotnet clean
+rm -f eventfinder.db eventfinder.db-shm eventfinder.db-wal
+```
+
+Then:
 
 ```bash
 az login

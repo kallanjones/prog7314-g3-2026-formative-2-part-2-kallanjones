@@ -40,3 +40,6 @@ api/**/obj/
 *.db
 *.db-shm
 *.db-wal
+
+# Azure CLI deployment settings written by `az webapp up`
+.azure/
