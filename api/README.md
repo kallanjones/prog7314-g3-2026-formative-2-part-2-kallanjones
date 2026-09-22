@@ -50,12 +50,67 @@ The SQLite file `eventfinder.db` is created automatically on first run.
 
 ### Connecting the Android app
 
-Debug builds already point at `http://10.0.2.2:5217/`, which is how the Android
-emulator reaches `localhost` on the host machine. Start the API first, then run
-the app — events created through `POST /api/events` appear in the app's Discover
-list on the next refresh.
+Debug builds default to `http://10.0.2.2:5217/`, which is how the Android emulator
+reaches `localhost` on the host machine. Start the API first, then run the app —
+events created through `POST /api/events` appear in the app's Discover list on the
+next refresh.
 
-The base URL is set per build type in `app/build.gradle.kts` (`API_BASE_URL`).
+## Testing on a physical phone
+
+`10.0.2.2` only means anything inside the emulator. A real phone has to reach your
+laptop over the network, which takes three steps.
+
+### 1. Make the API listen on the network, not just loopback
+
+`--urls http://localhost:5217` binds to loopback only, so the phone cannot connect.
+Bind to all interfaces instead:
+
+```bash
+dotnet run --urls http://0.0.0.0:5217
+```
+
+Docker already does this — `-p 5217:8080` publishes on all interfaces.
+
+### 2. Point the app at your laptop's IP
+
+Find it:
+
+```bash
+# Windows
+ipconfig
+
+# macOS / Linux
+ipconfig getifaddr en0 || hostname -I
+```
+
+Look for a `192.168.x.x` or `10.x.x.x` address. Then add it to **`local.properties`**
+in the repository root:
+
+```properties
+api.base.url=http://192.168.1.42:5217/
+```
+
+`local.properties` is gitignored, so your address never gets committed and each
+machine keeps its own. Re-run the build for it to take effect. Leave the property out
+and the build falls back to `10.0.2.2` for the emulator.
+
+### 3. Allow the port through the firewall
+
+Windows blocks inbound connections on new ports by default. In an **administrator**
+PowerShell:
+
+```powershell
+New-NetFirewallRule -DisplayName "EventFinder API" -Direction Inbound -LocalPort 5217 -Protocol TCP -Action Allow
+```
+
+### Checking it works
+
+Put the phone on the **same Wi-Fi** as the laptop, then open
+`http://192.168.1.42:5217/swagger` in the phone's browser. If Swagger loads, the app
+will connect too. If it does not, the cause is almost always step 1 or step 3.
+
+> Debug builds permit plain HTTP so this works without a certificate. Release builds
+> are HTTPS-only — see `app/src/debug/res/xml/network_security_config.xml`.
 
 ## Running in Docker
 

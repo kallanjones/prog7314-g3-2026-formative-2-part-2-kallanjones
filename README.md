@@ -236,12 +236,24 @@ IcsEventSource ────────┼──▶ EventDiscoveryRepository ─
 PublicJsonEventSource ─┘
 ```
 
-The base URL is a per-build-type `BuildConfig` field set in `app/build.gradle.kts`:
+The base URL is a `BuildConfig` field set in `app/build.gradle.kts`:
 
 | Build type | `API_BASE_URL` |
 | --- | --- |
-| `debug` | `http://10.0.2.2:5217/` — the host machine as seen from the emulator |
+| `debug` | `api.base.url` from `local.properties`, else `http://10.0.2.2:5217/` (the host machine as seen from the emulator) |
 | `release` | The deployed HTTPS URL |
+
+**Testing on a physical phone:** `10.0.2.2` only works inside the emulator. Put your
+laptop's LAN address in `local.properties` instead — it is gitignored, so each machine
+keeps its own:
+
+```properties
+api.base.url=http://192.168.1.42:5217/
+```
+
+You also need to start the API with `--urls http://0.0.0.0:5217` (not `localhost`) and
+open port 5217 in the firewall. [`api/README.md`](api/README.md#testing-on-a-physical-phone)
+has the full steps.
 
 ### Running it
 

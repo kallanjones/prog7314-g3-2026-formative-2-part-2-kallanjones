@@ -1,7 +1,36 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
+}
+
+/**
+ * Where debug builds look for the EventFinder REST API.
+ *
+ * Resolution order:
+ *  1. `api.base.url` in local.properties — machine-specific and gitignored, so
+ *     this is the place to put your laptop's LAN IP when testing on a phone.
+ *  2. `-PAPI_BASE_URL=...` on the Gradle command line, or gradle.properties.
+ *  3. 10.0.2.2, which is the host machine as seen from the Android emulator.
+ *
+ * Must end with a trailing slash — Retrofit requires it on a base URL.
+ */
+val debugApiBaseUrl: String = run {
+    val fromLocalProperties = rootProject.file("local.properties")
+        .takeIf { it.exists() }
+        ?.let { file ->
+            Properties().apply { file.inputStream().use { load(it) } }
+                .getProperty("api.base.url")
+        }
+
+    val configured = fromLocalProperties
+        ?: project.findProperty("API_BASE_URL") as? String
+
+    val resolved = configured?.trim()?.takeIf { it.isNotEmpty() } ?: "http://10.0.2.2:5217/"
+
+    if (resolved.endsWith("/")) resolved else "$resolved/"
 }
 
 android {
@@ -30,9 +59,9 @@ android {
 
     buildTypes {
         debug {
-            // 10.0.2.2 is the host machine as seen from the Android emulator, so
-            // a locally running `dotnet run` in /api is reachable during development.
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:5217/\"")
+            // Set `api.base.url` in local.properties to point at your laptop's
+            // LAN IP when testing on a physical phone. See debugApiBaseUrl above.
+            buildConfigField("String", "API_BASE_URL", "\"$debugApiBaseUrl\"")
             // The local API is plain HTTP; release builds stay HTTPS-only.
             isDebuggable = true
         }
