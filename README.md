@@ -1,149 +1,145 @@
 # EventFinder South Africa
 
 [![Android CI](https://github.com/kallanjones/prog7314-g3-2026-formative-2-part-2-kallanjones/actions/workflows/android-ci.yml/badge.svg)](https://github.com/kallanjones/prog7314-g3-2026-formative-2-part-2-kallanjones/actions/workflows/android-ci.yml)
-![Kotlin](https://img.shields.io/badge/Kotlin-1.9.22-7F52FF?logo=kotlin&logoColor=white)
-![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-BOM%202024.02-4285F4?logo=jetpackcompose&logoColor=white)
-![ASP.NET Core](https://img.shields.io/badge/ASP.NET%20Core-8.0-512BD4?logo=dotnet&logoColor=white)
-![minSdk](https://img.shields.io/badge/minSdk-26-brightgreen)
-![targetSdk](https://img.shields.io/badge/targetSdk-34-brightgreen)
-![Tests](https://img.shields.io/badge/tests-159%20app%20%2B%208%20api-success)
 
-A native **Android (Kotlin + Jetpack Compose)** app that helps people across South Africa
-discover, save and create local events — from Joburg jazz nights to Cape Town food markets
-and Durban festivals.
+A native Android app for finding, saving and creating local events across South Africa.
+Built for PROG7314 Part 2.
 
-EventFinder was built as the **Part 2 Portfolio of Evidence** for PROG7314. It is made up
-of two pieces:
+The repository holds two projects:
 
-- **`app/`** — the native Android client.
-- **`api/`** — our own **ASP.NET Core 8** REST API, backed by Entity Framework Core and
-  SQLite, which stores the event catalogue.
+- `app/` — the Android client, Kotlin and Jetpack Compose.
+- `api/` — our REST API, ASP.NET Core 8 with EF Core over SQLite, deployed to Render.
 
-The app also consumes several free, keyless public APIs for weather, geocoding and public
-event feeds, so no paid infrastructure is required.
+## Team
+
+| Name | Student number |
+| --- | --- |
+| Kallan Jones | ST10445389 |
+| Zulfique Jattiem | ST10403582 |
+| Morgan Gibbon | ST10439398 |
 
 ## Demonstration video
 
-📹 **[Watch the demonstration video](#)** — _replace this link with the unlisted YouTube URL
-before submission._
+https://youtu.be/TBs77XRCO-w
 
-The video covers registration and sign-in (including Google SSO), the settings menu, the
-data round-trip against the hosted REST API, and the user-defined features.
-
----
-
-## Table of contents
-
-1. [Features](#features)
-2. [Screenshots](#screenshots)
-3. [Tech stack](#tech-stack)
-4. [Architecture](#architecture)
-5. [Our REST API](#our-rest-api)
-6. [External APIs](#external-apis)
-7. [Localisation](#localisation)
-8. [Offline-first behaviour](#offline-first-behaviour)
-9. [Security](#security)
-10. [Getting started](#getting-started)
-11. [Testing](#testing)
-12. [Continuous integration](#continuous-integration)
-13. [Project structure](#project-structure)
-14. [Requirement traceability](#requirement-traceability)
-15. [Attribution & licences](#attribution--licences)
-
----
-
-## Features
-
-| Area | What it does |
-| --- | --- |
-| **Discover** | Browse the local event catalogue, filter by category chip and free-text keyword, sort by date / distance / name. |
-| **Near me** | Requests location permission and sorts events by distance using the Haversine great-circle formula. |
-| **Map** | Event locations plotted on a free OpenStreetMap map (osmdroid) — no Google Maps key or billing. |
-| **Event detail** | Hero image, organiser, attendee count, venue map link, **weather forecast at the venue** on the event day, share and RSVP. |
-| **Search** | Debounced keyword search with recent-search history and popular events. |
-| **Create event** | A 3-step wizard (details → date/time → location) with an optional photo picked from the system photo picker. |
-| **My events** | Organisers can edit or delete the events they created from the detail screen's overflow menu. |
-| **Favourites** | Save events offline; favourites survive app restarts and are stored in the local Room catalogue. |
-| **Profile** | Activity stats (created / attending / favourites), My Events and Attending lists. |
-| **Edit profile** | Update display name and email with validation. |
-| **Settings** | Language switch (English / Afrikaans), event reminders, new-event alerts, plus account tools (clear local cache, delete account). |
-| **Reminders** | `AlarmManager` + `NotificationChannel` reminders **24 hours and 1 hour** before an attended event, cancelled when the RSVP is declined. |
-| **Event alerts** | On-device notifications flag newly added or changed events in the local Room catalogue — computed by a pure diff, no push service required. |
+Covers sign-in including Google SSO, the settings menu, the data round trip against the
+hosted REST API, and the user-defined features.
 
 ## Screenshots
 
-Every screen below was captured from the running app on an Android 14 (API 34)
-emulator at 1080 × 2340.
+Captured on an Android 14 (API 34) emulator at 1080 × 2340.
 
-| Login | Register | Forgot password | Home (Discover) |
+| Login | Register | Home (Discover) | Event detail |
 | :---: | :---: | :---: | :---: |
-| ![Login](docs/screenshots/01-login.png) | ![Register](docs/screenshots/11-register.png) | ![Forgot password](docs/screenshots/12-forgot-password.png) | ![Home](docs/screenshots/02-home.png) |
+| ![Login](docs/screenshots/01-login.png) | ![Register](docs/screenshots/11-register.png) | ![Home](docs/screenshots/02-home.png) | ![Event detail](docs/screenshots/03-event-detail.png) |
 
-| Event detail | Map | Favourites | Search |
+| Map | Search | Create event | Settings |
 | :---: | :---: | :---: | :---: |
-| ![Event detail](docs/screenshots/03-event-detail.png) | ![Map](docs/screenshots/09-map.png) | ![Favourites](docs/screenshots/04-favorites.png) | ![Search](docs/screenshots/05-search.png) |
+| ![Map](docs/screenshots/09-map.png) | ![Search](docs/screenshots/05-search.png) | ![Create](docs/screenshots/06-create-event.png) | ![Settings](docs/screenshots/08-settings.png) |
 
-| Create – details | Create – date & venue | Date picker | Create – review |
-| :---: | :---: | :---: | :---: |
-| ![Create details](docs/screenshots/06-create-event.png) | ![Create date and venue](docs/screenshots/13-create-event-location.png) | ![Date picker](docs/screenshots/14-date-picker.png) | ![Create review](docs/screenshots/15-create-event-review.png) |
+## Features
 
-| Profile | Edit profile | Settings |
-| :---: | :---: | :---: |
-| ![Profile](docs/screenshots/07-profile.png) | ![Edit profile](docs/screenshots/10-edit-profile.png) | ![Settings](docs/screenshots/08-settings.png) |
+**Discover** — browse the catalogue, filter by category or keyword, sort by date, distance or
+name. Distance uses the Haversine formula against the device location.
 
-## Tech stack
+**Map** — events plotted on OpenStreetMap tiles through osmdroid. No Google Maps key, no billing.
 
-| Layer | Choice | Why |
+**Event detail** — organiser, attendee count, directions, share, RSVP, and the weather forecast
+for that venue on the day of the event.
+
+**Create event** — a three-step wizard covering details, date and time, then location, with an
+optional photo. Organisers can edit or delete their own events.
+
+**Favourites and profile** — save events for offline viewing; profile shows events created,
+attending and favourited.
+
+**Settings** — language (English or Afrikaans), event reminders, new-event alerts, biometric
+login, change password, clear cache, delete account.
+
+**Reminders** — `AlarmManager` notifications 24 hours and 1 hour before an event you are
+attending, cancelled if you decline.
+
+## The REST API
+
+The event catalogue is served by our own API in [`api/`](api), an ASP.NET Core 8 Minimal API
+using EF Core code-first over SQLite. The Part 1 design specified Azure SQL; SQLite replaced it
+so the service runs on a free tier without a separate database server. The schema and endpoints
+are otherwise as designed.
+
+Live at **https://eventfinder-api-si8u.onrender.com** —
+[Swagger](https://eventfinder-api-si8u.onrender.com/swagger) ·
+[health](https://eventfinder-api-si8u.onrender.com/api/health)
+
+Render's free plan sleeps when idle, so the first request after a quiet period takes up to a
+minute.
+
+| Method | Route | Purpose |
 | --- | --- | --- |
-| Language | **Kotlin 1.9.22** | First-class Android language, coroutines, null-safety. |
-| UI | **Jetpack Compose** (BOM 2024.02, Material 3) | Declarative UI, single activity, no XML layouts. |
-| Architecture | **MVVM + Repository** | Testable, unidirectional data flow (`StateFlow`). |
-| DI | **Manual `AppContainer`** | Transparent, dependency-free alternative to Hilt for a prototype. |
-| Local DB | **Room 2.6.1** | Compile-time verified SQLite for the offline event cache. |
-| Preferences | **DataStore Preferences 1.0** | Async, type-safe key/value storage for settings & session. |
-| Networking | **Retrofit 2.9 + OkHttp 4.12 + Gson** | Industry standard REST client with logging interceptor. |
-| Images | **Coil 2.6** | Coroutine-friendly Compose image loading. |
-| Maps | **osmdroid 6.1.18** | Free OpenStreetMap tiles, no API key, no billing. |
-| Security SDK | **AndroidX Biometric 1.1** | Fingerprint / face unlock. |
-| SSO | **AndroidX Credential Manager 1.3** | Google sign-in, the flow Google currently recommends. |
-| **Back end** | **ASP.NET Core 8 Minimal API** | Our own REST API (`api/`), per the Part 1 design. |
-| **Back-end ORM / DB** | **EF Core 8 + SQLite** | Code-first schema; a single file, so it hosts on any free tier. |
-| Build | **AGP 8.2.2, Gradle 8.7, JDK 17** | Current stable toolchain. |
-| Tests | **JUnit 4 + kotlinx-coroutines-test** | Pure JVM unit tests, no device required. |
+| `GET` | `/api/health` | Liveness probe |
+| `GET` | `/api/events` | List events (`?category=`, `?q=`, `?page=`, `?pageSize=`) |
+| `GET` | `/api/events/{id}` | Fetch one event |
+| `POST` | `/api/events` | Create an event |
+| `PUT` | `/api/events/{id}` | Update an event |
+| `DELETE` | `/api/events/{id}` | Delete an event |
+
+Every endpoint returns the same envelope, so the client handles all outcomes the same way:
+
+```json
+{ "success": true, "data": { }, "message": null, "errors": null }
+```
+
+Validation failures return 400 with field-level messages in `errors`; unknown ids return 404.
+
+### How the app consumes it
+
+`EventFinderApiSource` implements the same `EventSource` interface as the public feeds, so API
+events reach the Room cache through the existing ingestion pipeline:
+
+```
+EventFinderApi (Retrofit)
+        │
+        ▼
+EventFinderApiSource ──┐
+RssEventSource ────────┤
+IcsEventSource ────────┼──▶ EventDiscoveryRepository ──▶ Room ──▶ UI
+PublicJsonEventSource ─┘
+```
+
+The base URL is a `BuildConfig` field:
+
+| Build type | Source | Default |
+| --- | --- | --- |
+| `debug` | `api.base.url` in `local.properties` (gitignored, per machine) | `http://10.0.2.2:5217/` for the emulator |
+| `release` | `API_BASE_URL_RELEASE` in `gradle.properties` (committed) | the Render deployment |
+
+Running it locally, deploying it, and testing against a phone are covered in
+[`api/README.md`](api/README.md).
 
 ## Architecture
 
-EventFinder follows a clean three-layer **MVVM** architecture. The UI layer never talks to
-Retrofit or Room directly — everything flows through repositories that hide the data sources.
-
-### Layered overview
+MVVM in three layers. The UI never touches Retrofit or Room directly; everything goes through
+repositories.
 
 ```mermaid
 flowchart TB
     subgraph UI["UI layer (Jetpack Compose)"]
-        Screens["Screens + Navigation<br/>Splash · Home · Detail<br/>Search · Create · Favourites · Profile · Settings"]
+        Screens["Screens + Navigation"]
         VMs["ViewModels<br/>StateFlow&lt;UiState&gt;"]
     end
-
     subgraph Domain["Domain layer (pure Kotlin)"]
         Models["Models · EventCategory · EventFilterer"]
     end
-
     subgraph Data["Data layer (repositories)"]
         Repos["EventRepository · WeatherRepository · EventDiscoveryRepository"]
     end
-
     subgraph Sources["Data sources"]
-        Room[("Room cache<br/>events · favorites · rsvps · users")]
+        Room[("Room cache")]
         DS[("DataStore<br/>session & settings")]
-        API["EventFinder REST API<br/>ASP.NET Core 8 · ours"]
-        OM["Open-Meteo API<br/>keyless"]
-        OSM["OpenStreetMap / Overpass<br/>keyless"]
+        API["EventFinder REST API<br/>ours"]
+        OM["Open-Meteo"]
+        OSM["OpenStreetMap / Overpass"]
     end
-
-    subgraph Backend["Back end (api/)"]
-        SQLite[("SQLite<br/>via EF Core")]
-    end
+    SQLite[("SQLite via EF Core")]
 
     Screens --> VMs
     VMs --> Repos
@@ -157,460 +153,159 @@ flowchart TB
     API --> SQLite
 ```
 
-### Venue discovery flow
+Events, favourites and RSVPs are cached in Room and observed as flows, so the UI renders from
+cache immediately and a failed network call never blocks it. Mutations run inside `@Transaction`
+boundaries.
 
-```mermaid
-sequenceDiagram
-    participant H as HomeViewModel
-    participant R as OpenStreetMapRepository
-    participant API as Overpass API
+## Tech stack
 
-    H->>R: findNearbyVenues(lat, lng)
-    R->>API: GET /api/interpreter (around query)
-    API-->>R: OsmOverpassResponse
-    R->>R: map to OsmVenue list
-    R-->>H: nearby venues (theatres, stadiums, etc.)
-```
+Kotlin 1.9.22 · Jetpack Compose (BOM 2024.02, Material 3) · MVVM with a manual `AppContainer`
+for DI · Room 2.6.1 · DataStore · Retrofit 2.9 with OkHttp 4.12 · Coil 2.6 · osmdroid 6.1.18 ·
+AndroidX Biometric 1.1 · AndroidX Credential Manager 1.3 for Google sign-in.
 
-### Navigation graph
+Back end: ASP.NET Core 8 Minimal API · EF Core 8 · SQLite · Docker.
 
-```mermaid
-flowchart LR
-    Splash --> Main
+Build: AGP 8.2.2, Gradle 8.7, JDK 17. minSdk 26, targetSdk 34.
 
-    subgraph Main["Main (bottom navigation)"]
-        direction LR
-        Home --> Detail
-        Search --> Detail
-        Favourites --> Detail
-        Profile
-        Create
-    end
+## External services
 
-    Profile --> EditProfile
-    Profile --> Settings
-```
+All keyless:
 
-## Our REST API
+| Service | Used for |
+| --- | --- |
+| Open-Meteo | Weather forecast at a venue, and geocoding place names |
+| OpenStreetMap / Overpass | Map tiles and nearby venue discovery |
+| Aticket South Africa (RSS) | Public event feed |
+| Motorsport South Africa (ICS) | Public event feed |
+| Ardent Africa (JSON) | Public event feed |
 
-The event catalogue is served by **our own REST API**, which lives in [`api/`](api) and is
-documented in full in [`api/README.md`](api/README.md).
-
-**Live:** <https://eventfinder-api-si8u.onrender.com> —
-[Swagger](https://eventfinder-api-si8u.onrender.com/swagger) ·
-[health](https://eventfinder-api-si8u.onrender.com/api/health)
-
-> Hosted on Render's free plan, which spins the service down when idle. The first
-> request after a quiet period can take up to a minute while it wakes.
-
-It is an **ASP.NET Core 8 Minimal API** using **Entity Framework Core (code-first)** over
-**SQLite**. The Planning and Design document specified Azure SQL; SQLite is used instead so
-the service can be hosted on any free tier without provisioning a separate database server.
-The schema, endpoints and response envelope are otherwise as designed.
-
-### Endpoints
-
-| Method | Route | Purpose |
-| --- | --- | --- |
-| `GET` | `/api/health` | Liveness probe |
-| `GET` | `/api/events` | List events (`?category=`, `?q=`, `?page=`, `?pageSize=`) |
-| `GET` | `/api/events/{id}` | Fetch one event |
-| `POST` | `/api/events` | Create an event |
-| `PUT` | `/api/events/{id}` | Update an event |
-| `DELETE` | `/api/events/{id}` | Delete an event |
-
-Every response uses the same envelope, so the client handles all outcomes the same way:
-
-```json
-{ "success": true, "data": { }, "message": null, "errors": null }
-```
-
-Validation failures return **400** with field-level messages in `errors`; unknown ids
-return **404**. Swagger UI is served at `/swagger` for demonstrating the round-trip.
-
-### How the app consumes it
-
-`EventFinderApiSource` implements the same `EventSource` interface as the public feeds, so
-events from our API flow into the Room cache through the existing ingestion pipeline:
-
-```
-EventFinderApi (Retrofit)
-        │
-        ▼
-EventFinderApiSource ──┐
-RssEventSource ────────┤
-IcsEventSource ────────┼──▶ EventDiscoveryRepository ──▶ Room ──▶ UI
-PublicJsonEventSource ─┘
-```
-
-The base URL is a `BuildConfig` field set in `app/build.gradle.kts`:
-
-| Build type | `API_BASE_URL` | Set it in |
-| --- | --- | --- |
-| `debug` | `api.base.url`, else `http://10.0.2.2:5217/` (the host machine as seen from the emulator) | `local.properties` — gitignored, so per machine |
-| `release` | `API_BASE_URL_RELEASE`, the deployed Fly.io instance | `gradle.properties` — committed, so shared |
-
-The API ships with a [`Dockerfile`](api/EventFinder.Api/Dockerfile), so it runs on any
-container host. [`api/README.md`](api/README.md) has step-by-step instructions for:
-
-| Host | Config | Card needed | Database survives redeploys |
-| --- | --- | --- | --- |
-| **[Render](api/README.md#deploying-to-render)** | [`render.yaml`](render.yaml) | No | No — free plan has no disk |
-| **[Azure App Service](api/README.md#deploying-to-azure-app-service)** | — | No, with Azure for Students | Yes — on the `/home` share |
-| **[Fly.io](api/README.md#deploying-to-flyio)** | [`fly.toml`](api/EventFinder.Api/fly.toml) | Yes | Yes — on a mounted volume |
-
-Azure is the stack named in the Part 1 design document. Render is the quickest to get
-running when no Azure subscription is available.
-
-**Testing on a physical phone:** `10.0.2.2` only works inside the emulator. Put your
-laptop's LAN address in `local.properties` instead — it is gitignored, so each machine
-keeps its own:
-
-```properties
-api.base.url=http://192.168.1.42:5217/
-```
-
-You also need to start the API with `--urls http://0.0.0.0:5217` (not `localhost`) and
-open port 5217 in the firewall. [`api/README.md`](api/README.md#testing-on-a-physical-phone)
-has the full steps.
-
-### Running it
-
-```bash
-cd api/EventFinder.Api
-dotnet run --urls http://localhost:5217
-```
-
-Start the API before launching a debug build of the app. Events created through
-`POST /api/events` appear in the app's Discover list on the next refresh.
-
-## External APIs
-
-
-EventFinder uses public services that do not require API keys or tokens:
-
-| Service | Auth | Used for |
-| --- | --- | --- |
-| **Open-Meteo** | Keyless | Weather forecasts |
-| **OpenStreetMap** | Keyless | Map data |
-| **Overpass API** | Keyless for normal OSM data queries | Nearby venues and event-related places |
-| **Ardent Africa** | Keyless (optional API key for higher limits) | Public event discovery |
-| **Android Location APIs** | Device permission | Current device location |
-| **Room / SQLite** | Local | Events, users, favourites and RSVPs |
-
-### OpenStreetMap / Overpass
-
-Overpass is used to discover nearby event-related places such as:
-
-- theatres
-- cinemas
-- arts centres
-- museums
-- galleries
-- stadiums
-- sports centres
-- community centres
-- conference centres
-- attractions
-- theme parks
-- zoos
-
-Overpass provides OpenStreetMap objects rather than a commercial event calendar.
-Therefore OSM venue discovery does not fabricate event dates or scheduled performances.
-
-Actual scheduled EventFinder events are stored locally in Room and may be created by
-the user.
-
-OpenStreetMap data is © OpenStreetMap contributors.
-
-OpenStreetMap requires appropriate attribution when using its data.
-
-### Public JSON event feeds
-
-EventFinder can discover real-world events from keyless public JSON feeds. The pipeline works as follows:
-
-1. Each `EventSource` implementation fetches events from its endpoint.
-2. `PublicJsonEventMapper` normalises different JSON schemas into a common `RemoteEvent` model.
-3. `EventDiscoveryRepository` validates each event (future-only, valid coordinates, non-blank title).
-4. Valid events are upserted into Room with `remote:` prefixed IDs to prevent collisions with user-created events.
-5. Events without valid coordinates are rejected since they cannot be plotted on the map.
-
-Currently configured sources:
-
-| Source | URL | Key required |
-| --- | --- | --- |
-| **Aticket South Africa** | `https://za.aticket.net/feed/featured-events` (RSS) | No |
-| **Motorsport South Africa** | `https://www.motorsport.co.za/events/list/?ical=1` (ICS) | No |
-| **Ardent Africa** | `https://api.ardent.africa/public/v1/events` (JSON) | No |
-
-New sources can be added in `SouthAfricaEventSources.kt` without changing any other code.
-The `PublicJsonEventClient` handles `{ "events": [...] }`, `{ "data": [...] }`, `{ "results": [...] }`,
-and bare JSON array formats automatically. RSS and ICS sources are parsed by `RssEventSource` and
-`IcsEventSource` respectively.
-
-## Localisation
-
-The whole UI is externalised to string resources and ships in two languages:
-
-- `res/values/strings.xml` — **English**
-- `res/values-af/strings.xml` — **Afrikaans**
-
-The language is switched at runtime from **Settings** (persisted in DataStore) and applied
-through `LocaleManager` in `MainActivity.attachBaseContext`.
-
-## Offline-first behaviour
-
-- Events, favourites and RSVPs are cached in **Room** and observed as `Flow`s, so the UI renders instantly.
-- Favourite, RSVP and event mutations are wrapped in **atomic `@Transaction` boundaries** for consistency.
-- The app attempts to discover public JSON event feeds when online; discovery failure never blocks the local catalogue.
-- Reminder alarms carry the owning `userId` and `ReminderReceiver` verifies the active session before posting, preventing stale-account notifications.
-- The UI never blocks on the network: a failed discovery simply keeps the cached catalogue.
-
-## Security
-
-- Credentials never leave the device. `local.properties` and keystores are git-ignored.
+Feed events are normalised into a common `RemoteEvent`, validated (future-only, non-blank title),
+geocoded when coordinates are missing, and upserted into Room. New sources are added in
+`SouthAfricaEventSources.kt` without touching anything else.
 
 ## Getting started
 
-### Prerequisites
-
-- **Android Studio Hedgehog** (or newer) or the Android command-line tools
-- **JDK 17** (`JAVA_HOME` must point at it — AGP 8.x does not support JDK 21)
-- Android SDK with **API 34** platform + build-tools
-- A physical device or emulator running **API 26+**
-
-### 1. Clone
+Requires Android Studio (JDK 17 bundled), and .NET 8 SDK if you want to run the API locally.
 
 ```bash
 git clone https://github.com/kallanjones/prog7314-g3-2026-formative-2-part-2-kallanjones.git
-cd eventfinder-south-africa
 ```
 
-### 2. Configure the SDK path
+Open the folder in Android Studio once so it writes `local.properties` with your SDK path. That
+file is gitignored, so it is not in the clone, and Gradle fails with "SDK location not found"
+without it.
 
-Create `local.properties` in the project root (git-ignored):
+### Google sign-in
 
-```properties
-sdk.dir=C\:\\Users\\<you>\\AppData\\Local\\Android\\Sdk
-```
+The app builds and runs without any Google configuration; the button reports that sign-in is not
+configured until a client ID is set. To enable it:
 
-### 3. No API keys required
+1. In the [Google Cloud Console](https://console.cloud.google.com/), configure the OAuth consent
+   screen as **External**, and add every Gmail account that will sign in under **Test users**.
+2. Create two OAuth clients:
+   - **Android** — package `com.eventfinder.app`, plus the debug SHA-1 of every machine that
+     builds the app. Get yours with `./gradlew signingReport`. One client holds many
+     fingerprints, so add each teammate's.
+   - **Web application** — Credential Manager's `setServerClientId` expects the *Web* client ID,
+     even though the app is Android.
+3. Put the Web client ID in `gradle.properties` as `GOOGLE_WEB_CLIENT_ID`.
 
-EventFinder does not require:
+If sign-in reports that Google had no account to offer, the cause is usually an unregistered
+SHA-1 or an account missing from the test-user list, not a missing account on the device.
+`adb logcat -s EventFinder` prints the underlying message.
 
-- API keys
-- API tokens
-- developer accounts
-- cloud backend credentials
-- secrets embedded in the APK
-
-Open-Meteo and OpenStreetMap/Overpass are accessed directly by the Android app.
-
-### 4. Enable Google sign-in (SSO)
-
-The app builds and runs **without** any Google configuration — the "Continue with Google"
-button simply shows a "not configured" message until a client ID is provided. To enable the
-real SSO flow (FR-01):
-
-1. In the [Google Cloud Console](https://console.cloud.google.com/) create a project and
-   configure the **OAuth consent screen**:
-   - User type: **External** (testing mode is fine for grading)
-   - Under **Test users**, add every Gmail account that will sign in during testing — while
-     the app is in testing mode, only listed accounts are allowed.
-2. Under **Credentials → Create Credentials → OAuth client ID**, create **two** clients:
-   - **Android** — application type *Android*, package name `com.eventfinder.app`, plus the
-     **debug SHA-1** of each machine that will build the app. Get yours with:
-     ```bash
-     ./gradlew signingReport   # copy the SHA1 under Variant: debug
-     ```
-     One Android client can hold many SHA-1 fingerprints, so add each teammate's.
-   - **Web application** — copy its **Client ID** (ends in `.apps.googleusercontent.com`).
-     Despite the app running on Android, Credential Manager's `setServerClientId` expects
-     the **Web** client ID.
-3. Put the Web client ID in `gradle.properties`:
-   ```properties
-   GOOGLE_WEB_CLIENT_ID=<your-web-client-id>.apps.googleusercontent.com
-   ```
-   It is committed, so the whole group shares one client ID. The Android SHA-1s are what
-   vary per machine — add each teammate's debug SHA-1 to the Android client above.
-
-> The device/emulator you test on must be signed into a Gmail account listed as a test
-> user, or sign-in fails with an access error (a config issue, not a code bug).
-
-**If sign-in reports that Google had no account to offer**, the cause is usually *not* a
-missing account. Credential Manager raises the same `NoCredentialException` when:
-
-- the building machine's **debug SHA-1 is not on the Android OAuth client** — each
-  teammate's is different, so add every one;
-- the signed-in account is **not listed as a test user** on the consent screen; or
-- the device genuinely has no Google account.
-
-`adb logcat -s EventFinder` prints the underlying Google message, which distinguishes them.
-
-### 5. Build & install
+### Build and install
 
 ```bash
-# Linux / macOS / Git Bash
-./gradlew assembleDebug
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-
-# Windows (PowerShell)
-$env:JAVA_HOME="C:\Program Files\Java\jdk-17"
-.\gradlew.bat assembleDebug
-adb install -r app\build\outputs\apk\debug\app-debug.apk
+./gradlew installDebug
 ```
+
+On Windows PowerShell use `.\gradlew installDebug`. PowerShell 5.1 has no `&&`, so run chained
+commands on separate lines.
 
 ## Testing
 
-The project has **159 JVM unit tests** for the app and **8 endpoint tests** for the API, all
-runnable from the command line with no emulator:
+159 JVM unit tests for the app and 8 endpoint tests for the API, none needing an emulator:
 
 ```bash
-# Android app
 ./gradlew testDebugUnitTest
-
-# REST API
 dotnet test api/EventFinder.Api.Tests
 ```
 
-| Suite | Covers |
-| --- | --- |
-| `ValidatorsTest` | Email, password strength, name and the multi-field registration form. |
-| `PasswordHasherTest` | PBKDF2 hashing, salting, verification and fail-closed behaviour on malformed values. |
-| `DistanceCalculatorTest` | Haversine distance, symmetry, rounding and radius checks. |
-| `EventFiltererTest` | Keyword / category / radius filtering (including address and description matching), three sort orders, distance attachment. |
-| `WeatherRepositoryTest` | WMO weather-code descriptions and Open-Meteo payload handling. |
-| `OpenStreetMapRepositoryTest` | Overpass venue query mapping and geographic bounding. |
-| `EventRepositoryTest` | Seeding, favourite/RSVP toggling, event creation, editing/deleting with ownership guard, cache clearing — using in-memory DAO fakes. |
-| `SampleEventsProviderTest` | Demo catalogue integrity (unique ids, valid SA coordinates, sane dates). |
-| `CreateEventValidationTest` | Per-step wizard validation (required title/description, future date, venue, coordinate ranges) that drives the inline error messages. |
-| `EventAlertDetectorTest` | Pure new-event / favourite-changed diffing, including quiet first sync and past-event suppression. |
-| `DateTimeUtilsTest` | Relative date helpers (today/tomorrow, day & hour offsets) and stable date formatting. |
-| `LoginViewModelTest` | Password-reset flows (mismatch, success) with a fake repository. |
-| `EventDiscoveryRepositoryTest` | Event discovery pipeline: valid future events inserted, missing coordinates rejected, past events rejected, source failures handled gracefully, deduplication by stableId, multi-source merging. |
-| `PublicJsonEventMapperTest` | Public JSON event DTO parsing: Ardent Africa string-location handling, object-location parsing, null-location graceful handling, mapper output validation. |
+They cover validation and password hashing, distance and filtering, the event and auth
+repositories against in-memory DAO fakes, the discovery pipeline (rejecting past events and
+events without coordinates, deduplication, per-source failure), feed parsing for RSS, ICS and
+JSON, and the API's own endpoints over real HTTP. Reports land in
+`app/build/reports/tests/testDebugUnitTest/index.html`.
 
-HTML reports are written to `app/build/reports/tests/testDebugUnitTest/index.html`.
-
-### Instrumented UI tests
-
-A small **Compose UI test** suite runs on a connected device/emulator and covers the shared
-widgets (`app/src/androidTest/.../ui/components/CommonComponentsTest.kt`):
+Six Compose UI tests cover the shared widgets and run on a device:
 
 ```bash
 ./gradlew connectedDebugAndroidTest
 ```
 
-| Test | Covers |
-| --- | --- |
-| `eventCard_displaysTitleAndVenue` | Card renders the event title, venue and metadata. |
-| `eventCard_clickInvokesCallback` | Tapping the card fires its `onClick`. |
-| `eventCard_favouriteToggleInvokesCallback` | The heart button reports add/remove from its content description. |
-| `categoryChips_selectsACategoryAndCanClearIt` | Category chips select and clear the filter. |
-| `categoryChips_selectsTheActiveChip` | The active category exposes selected semantics; the others do not. |
-| `emptyState_displaysTitleAndSubtitle` | The reusable `EmptyState` renders its icon, title and subtitle. |
-
 ## Continuous integration
 
-GitHub Actions runs on every push / PR to `main` (`.github/workflows/android-ci.yml`).
+`.github/workflows/android-ci.yml` runs on every push and pull request to `main`, in three jobs:
 
-**Job 1 — `api-test`** (REST API)
+1. **api-test** — sets up .NET 8, builds the API and runs its 8 endpoint tests.
+2. **build-and-test** — validates the Gradle wrapper, runs the unit tests, lint and
+   `assembleDebug`, then uploads the test report and the debug APK.
+3. **instrumentation-test** — runs the Compose UI tests on an API 33 emulator.
 
-1. Set up **.NET 8**
-2. `dotnet build` the API
-3. `dotnet test` the 8 endpoint tests
-4. Upload the API test report
-
-**Job 2 — `build-and-test`** (Android app)
-
-1. Validate the Gradle wrapper
-2. Set up **JDK 17**
-3. `./gradlew testDebugUnitTest`
-4. `./gradlew lintDebug`
-5. `./gradlew assembleDebug`
-6. Upload the test report and the debug APK as build artifacts
-
-**Job 3 — `instrumentation-test`** runs the Compose UI tests on an API 33 emulator.
-
-CI never depends on a secret to compile — the public APIs are keyless, and Google sign-in
-falls back to a "not configured" message when no client ID is set.
+Nothing in CI needs a secret: the public APIs are keyless, and Google sign-in falls back to its
+unconfigured state when no client ID is present.
 
 ## Project structure
 
 ```
 app/src/main/java/com/eventfinder/app/
 ├── data/
-│   ├── local/          Room entities, DAOs, database + entity↔domain mappers
-│   ├── remote/         Retrofit services, DTOs, API client (our API + Open-Meteo + Overpass)
-│   ├── remote/dto/     Our API's response envelope + public JSON event DTOs
-│   ├── remote/model/   Provider-independent RemoteEvent model
-│   ├── repository/     Event / Auth / Weather / Discovery repositories + sample seed data
-│   ├── sources/        EventSource interface, EventFinderApiSource, RSS/ICS/JSON sources
-│   └── store/          DataStore user preferences
-├── di/                 AppContainer (manual dependency injection)
-├── domain/model/       Event, User, RSVP, categories, filter/sort engine
-├── notifications/      Notification channel + reminder receiver
-├── security/           Biometric authentication + Google sign-in (SSO)
-├── ui/
-│   ├── components/     Shared Compose components + UiMessage
-│   ├── navigation/     NavHost + bottom navigation
-│   ├── screens/        splash · auth · home · detail · search · create · favorites · profile · editprofile · settings
-│   └── theme/           Material 3 colour scheme & typography
-└── utils/              Logging, date/time, distance, validation, hashing, locale, network
-app/src/test/java/com/eventfinder/app/   JVM unit tests
-app/src/androidTest/java/com/eventfinder/app/   Compose instrumented UI tests
-docs/screenshots/                        Real device screenshots
+│   ├── local/        Room entities, DAOs, database, mappers
+│   ├── remote/       Retrofit services and DTOs (our API, Open-Meteo, Overpass)
+│   ├── repository/   Event / Auth / Weather / Discovery repositories
+│   ├── sources/      EventSource interface, EventFinderApiSource, RSS/ICS/JSON sources
+│   └── store/        DataStore preferences
+├── di/               AppContainer (manual dependency injection)
+├── domain/model/     Event, User, RSVP, categories, filter and sort
+├── notifications/    Notification channels and reminder receiver
+├── security/         Biometric authentication and Google sign-in
+├── ui/               Compose screens, navigation, shared components, theme
+└── utils/            Logging, date/time, distance, validation, hashing, locale
 
-api/
-├── EventFinder.Api/        ASP.NET Core 8 Minimal API
-│   ├── Program.cs          Endpoint definitions, validation, DI
-│   ├── Models/             EventEntity, request DTO, response envelope
-│   └── Data/               EF Core DbContext (SQLite)
-├── EventFinder.Api.Tests/  8 endpoint tests driving the real host over HTTP
-└── README.md               API documentation and deploy steps
+api/EventFinder.Api/        Program.cs, Models/, Data/ (EF Core DbContext), Dockerfile
+api/EventFinder.Api.Tests/  8 endpoint tests driving the real host over HTTP
 ```
 
 ## Requirement traceability
 
-| Requirement | Where it is implemented |
+| Requirement | Where |
 | --- | --- |
-| **Creation of a REST API** | [`api/EventFinder.Api`](api) — ASP.NET Core 8 Minimal API, EF Core code-first, SQLite |
-| **Integration of our REST API** | `EventFinderApi` (Retrofit) + `EventFinderApiSource`, feeding `EventDiscoveryRepository` |
-| **SSO sign-in** | `GoogleSignInClient` (AndroidX Credential Manager) → `AuthRepository.signInWithGoogle` |
-| **Settings menu** | `SettingsScreen` / `SettingsViewModel` — language, notifications, biometrics, cache, account |
-| Third-party API integration | Open-Meteo (`WeatherRepository`) and OpenStreetMap/Overpass (`OpenStreetMapRepository`) — keyless |
-| External library integration | Room, Retrofit/OkHttp, DataStore, Coil, osmdroid, AndroidX Biometric, Credential Manager |
-| Native Android SDK integration | `AlarmManager` + `NotificationManager` reminders, `LocationManager`/location permissions, biometrics |
-| Offline-first / robustness | Room cache + local event catalogue, graceful fallbacks, validation on every form |
-| Unit testing | 159 JVM tests + 8 API endpoint tests + 6 Compose instrumented tests, all run by GitHub Actions |
-| Logging & comments | `AppLogger` used across data/UI layers; KDoc on every class |
-| Documentation | This README with Mermaid architecture diagrams, plus [`api/README.md`](api/README.md) |
+| Creation of a REST API | [`api/EventFinder.Api`](api) — ASP.NET Core 8, EF Core, SQLite |
+| Integration of our REST API | `EventFinderApi` and `EventFinderApiSource` into `EventDiscoveryRepository` |
+| SSO sign-in | `GoogleSignInClient` → `AuthRepository.signInWithGoogle` |
+| Settings menu | `SettingsScreen` / `SettingsViewModel` |
+| Third-party API integration | `WeatherRepository`, `OpenStreetMapRepository` |
+| External libraries | Room, Retrofit/OkHttp, DataStore, Coil, osmdroid, Biometric, Credential Manager |
+| Native SDK integration | `AlarmManager`, `NotificationManager`, location APIs, biometrics |
+| Unit testing | 159 JVM + 8 API + 6 Compose tests, all run in GitHub Actions |
+| Logging and comments | `AppLogger` across the data and UI layers; KDoc on classes |
 
 ## Known limitations
 
-The app is a **single-device, offline-first prototype** built entirely on free services, so a few
-features that need a shared server are intentionally out of scope:
+- **Attendee management** — RSVPs are counted locally. Approving or declining other people's
+  attendance would need per-user records on the server.
+- **Password reset** looks the account up by email and updates the local hash. It proves no
+  ownership of the address, so it would need email or SMS verification in production.
+- **Push notifications** are on-device (`AlarmManager` and `NotificationManager`) rather than
+  Firebase Cloud Messaging.
+- **Default city and radius** exist in the data layer but have no settings UI.
+- **API persistence** — Render's free plan has no persistent disk, so the API database resets on
+  redeploy. `api/README.md` covers hosts that keep it.
 
-- **RSVP attendee management** — there is no way to approve or decline other people's attendance
-  because accounts and events live only on the device. The RSVP counter and reminder cancellation
-  work locally; a real attendee list would need a multi-user backend.
-- **Google sign-in** is implemented with AndroidX Credential Manager, but needs an OAuth web
-  client ID in `GOOGLE_WEB_CLIENT_ID` (`gradle.properties`) to run. Until one is set the
-  button explains that sign-in is not configured rather than failing silently.
-- **Password reset** is a local email-lookup that updates the Room hash — no cloud backend is
-  needed. **Security limitation:** reset performs no proof of email ownership, so it must be
-  replaced with email/SMS verification before production use. Password change is also
-  available in Settings.
-- **Push notifications** are replaced by on-device notifications (`AlarmManager` +
-  `NotificationManager`); true push would need Firebase Cloud Messaging.
-- **Default city / radius** preferences exist in the data layer but have no settings UI yet.
-- **Public event feeds** — the architecture supports keyless public JSON, RSS and ICS event sources via `EventDiscoveryRepository`. Aticket South Africa (RSS), Motorsport South Africa (ICS) and Ardent Africa (JSON) are configured as verified sources. Events without valid coordinates are correctly rejected since they cannot be plotted on the map. Additional sources can be added to `SouthAfricaEventSources.kt`.
-- **isPublic** means "visible in this device's local catalogue only" — there is no cross-device sharing.
+## Attribution
 
-## Attribution & licences
-
-- Weather data by **Open-Meteo.com** (CC-BY 4.0).
-- Map data © **OpenStreetMap** contributors.
-- Venue discovery powered by the **Overpass API** (ODbL).
-- Haversine formula adapted from [Moveable Type Scripts](https://www.movable-type.co.uk/scripts/latlong.html) by Chris Veness.
-- Password hashing guidance from the [OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
+- Weather data by [Open-Meteo](https://open-meteo.com) (CC-BY 4.0).
+- Map data © OpenStreetMap contributors; venue discovery via the Overpass API (ODbL).
+- Haversine implementation adapted from [Movable Type Scripts](https://www.movable-type.co.uk/scripts/latlong.html) by Chris Veness.
+- Password hashing follows the [OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
