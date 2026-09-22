@@ -6,6 +6,7 @@ import com.eventfinder.app.data.remote.dto.OmHourly
 import com.eventfinder.app.data.remote.dto.OmHourlyUnits
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
@@ -47,18 +48,28 @@ class WeatherRepositoryTest {
         .atStartOfDay(zone).toInstant().toEpochMilli()
 
     private class FakeOpenMeteoApi(private val response: OmForecastResponse) : OpenMeteoApi {
+        /** Arguments of the last call, so tests can assert what was requested. */
+        var lastForecastDays: Int? = null
+        var lastStartDate: String? = null
+        var lastEndDate: String? = null
+
         override suspend fun getForecast(
             latitude: Double,
             longitude: Double,
             hourly: String,
             daily: String,
-            forecastDays: Int,
+            forecastDays: Int?,
             temperatureUnit: String,
             windSpeedUnit: String,
             timezone: String,
             startDate: String?,
             endDate: String?
-        ): OmForecastResponse = response
+        ): OmForecastResponse {
+            lastForecastDays = forecastDays
+            lastStartDate = startDate
+            lastEndDate = endDate
+            return response
+        }
     }
 
     @Test
@@ -163,5 +174,28 @@ class WeatherRepositoryTest {
         val api = FakeOpenMeteoApi(OmForecastResponse(hourly = null))
         val result = WeatherRepositoryImpl(api).forecastFor("event-1", -33.9, 18.4, startDate)
         assertTrue(result.isFailure)
+    }
+
+    @Test
+    fun `requests the event date and never sends forecast days alongside it`() = runTest {
+        // Open-Meteo answers 400 when forecast_days is combined with a
+        // start_date/end_date range, so the lookup must send only the range.
+        val api = FakeOpenMeteoApi(
+            OmForecastResponse(
+                timezone = zone.id,
+                hourly = OmHourly(
+                    time = listOf("2026-10-03T00:00"),
+                    temperature2m = listOf(12.0),
+                    weatherCode = listOf(0)
+                ),
+                hourlyUnits = OmHourlyUnits(temperatureUnit = "°C")
+            )
+        )
+
+        WeatherRepositoryImpl(api).forecastFor("event-1", -26.2, 28.0, startDate)
+
+        assertNull(api.lastForecastDays)
+        assertEquals(isoDate, api.lastStartDate)
+        assertEquals(isoDate, api.lastEndDate)
     }
 }
