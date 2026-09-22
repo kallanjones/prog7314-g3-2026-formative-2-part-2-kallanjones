@@ -44,6 +44,17 @@ class UserPreferences(private val context: Context) : SessionProvider {
 
     private val gson = Gson()
 
+    /**
+     * A lightweight, synchronous mirror of the language preference.
+     * `attachBaseContext()` must read the locale synchronously and runs before
+     * any coroutine scope exists; a blocking DataStore read on the main thread
+     * there can ANR. The language is therefore mirrored into SharedPreferences
+     * (safe to read on the main thread) whenever it changes, and read back from
+     * here at startup. DataStore remains the source of truth for everything else.
+     */
+    private val localeMirror =
+        context.getSharedPreferences("eventfinder_locale", Context.MODE_PRIVATE)
+
     private object Keys {
         // Global keys
         val SESSION_USER_ID = stringPreferencesKey("session_user_id")
@@ -85,6 +96,8 @@ class UserPreferences(private val context: Context) : SessionProvider {
         .map { it[Keys.LANGUAGE] ?: "en" }
 
     override suspend fun setLanguage(lang: String) {
+        // Keep the synchronous startup mirror in step with DataStore.
+        localeMirror.edit().putString("language", lang).apply()
         context.eventFinderDataStore.edit { it[Keys.LANGUAGE] = lang }
         AppLogger.i("UserPreferences", "Language preference saved: $lang")
     }
@@ -207,21 +220,31 @@ class UserPreferences(private val context: Context) : SessionProvider {
     /**
      * Synchronous language read used when the Activity recreates for a locale change.
      *
-     * Uses runBlocking intentionally: attachBaseContext() requires a synchronous
-     * value and runs before any coroutine scope is available. This is the only
-     * call-site where the blocking version is used; all other code should prefer
-     * the suspend [currentLanguage] function.
+     * Reads the SharedPreferences [localeMirror] rather than DataStore:
+     * attachBaseContext() needs the value synchronously and runs before any
+     * coroutine scope exists, and a blocking DataStore read on the main thread
+     * can ANR. The mirror is kept current by [setLanguage]. All other code
+     * should prefer the suspend [currentLanguage] function.
      */
     fun currentLanguageBlocking(): String =
-        runCatching {
-            kotlinx.coroutines.runBlocking {
-                context.eventFinderDataStore.data.first()[Keys.LANGUAGE] ?: "en"
-            }
-        }.getOrDefault("en")
+        localeMirror.getString("language", "en") ?: "en"
 
     /** Suspending language read for use inside coroutines. */
     suspend fun currentLanguage(): String =
         context.eventFinderDataStore.data.first()[Keys.LANGUAGE] ?: "en"
+
+    /**
+     * Seeds the synchronous [localeMirror] from DataStore when the two disagree.
+     * Covers installs that saved a language before the mirror existed, so the
+     * next launch still applies the correct locale. Call from a background
+     * coroutine at startup; never blocks the main thread.
+     */
+    suspend fun syncLocaleMirror() {
+        val stored = context.eventFinderDataStore.data.first()[Keys.LANGUAGE] ?: return
+        if (localeMirror.getString("language", null) != stored) {
+            localeMirror.edit().putString("language", stored).apply()
+        }
+    }
 
     /** Saves a route to navigate to after Activity recreation (e.g. language change). */
     suspend fun setPendingNavigationRoute(route: String?) {

@@ -8,8 +8,10 @@ import com.eventfinder.app.data.remote.model.RemoteEvent
 import com.eventfinder.app.data.sources.EventSource
 import com.eventfinder.app.domain.model.EventCategory
 import com.eventfinder.app.utils.AppLogger
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
@@ -21,9 +23,18 @@ class EventDiscoveryRepository(
     private val tag = "EventDiscoveryRepository"
     private val refreshMutex = Mutex()
 
+    /**
+     * Runs the whole discovery pipeline on [Dispatchers.IO]. Callers (e.g.
+     * HomeViewModel) launch this from viewModelScope, which is the main
+     * dispatcher; without this switch the geocoding network calls, the API
+     * request and the Room writes would all be orchestrated on the UI thread
+     * and freeze it (ANR). Every child suspend call inherits the IO context.
+     */
     suspend fun refresh(): DiscoveryResult =
-        refreshMutex.withLock {
-            refreshInternal()
+        withContext(Dispatchers.IO) {
+            refreshMutex.withLock {
+                refreshInternal()
+            }
         }
 
     private suspend fun refreshInternal(): DiscoveryResult {

@@ -6,6 +6,9 @@ import android.os.Build
 import android.util.Log
 import com.eventfinder.app.di.AppContainer
 import com.eventfinder.app.utils.AppLogger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 
@@ -25,6 +28,18 @@ class EventFinderApp : Application() {
         container = AppContainer(this)
         startNetworkMonitoring()
         initialiseMapSdk()
+        seedLocaleMirror()
+    }
+
+    /**
+     * Brings the synchronous locale mirror in line with DataStore on a
+     * background thread, so a language chosen on a previous version is still
+     * applied at startup. Off the main thread, so it never delays launch.
+     */
+    private fun seedLocaleMirror() {
+        CoroutineScope(Dispatchers.IO).launch {
+            runCatching { container.preferences.syncLocaleMirror() }
+        }
     }
 
     /** Platform logging util used before the app logger is available. */
