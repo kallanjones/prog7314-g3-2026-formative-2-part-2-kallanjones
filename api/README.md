@@ -333,15 +333,39 @@ API_BASE_URL_RELEASE=https://<your-app-name>.azurewebsites.net/
 The option that needs **no credit card and no CLI** — useful if an Azure subscription
 is not available.
 
-[`render.yaml`](../render.yaml) in the repository root already describes the service.
+Sign in to [Render](https://render.com) with your GitHub account, then choose
+**New → Web Service** and select this repository.
 
-1. Push the repository to GitHub.
-2. Sign in to [Render](https://render.com) with your GitHub account.
-3. **New → Blueprint**, select this repository, and Render reads `render.yaml`.
-4. Click **Apply**. The first build takes a few minutes.
+Set these, because the API is not at the repository root:
+
+| Field | Value |
+| --- | --- |
+| Language / Runtime | Docker |
+| Branch | `main` |
+| **Root Directory** | `api/EventFinder.Api` |
+| Dockerfile Path | `./Dockerfile` |
+| Instance Type | Free |
+| Health Check Path | `/api/health` |
+
+Add two environment variables:
+
+```
+ASPNETCORE_HTTP_PORTS = 8080
+ConnectionStrings__Default = Data Source=/data/eventfinder.db
+```
+
+Then **Create Web Service**. The first build takes a few minutes.
+
+> **Root Directory is the important one.** Left blank, Render builds from the
+> repository root, which holds the Android app and no Dockerfile, and the build fails.
+> If Render reports that it cannot detect an open port, add `PORT=8080` as well.
 
 The API is then at `https://<service-name>.onrender.com`, with HTTPS provided
 automatically. Check `https://<service-name>.onrender.com/api/health`.
+
+[`render.yaml`](../render.yaml) in the repository root describes the same service as a
+Blueprint, if you prefer that route — Render lists Blueprints separately from the New
+Web Service flow.
 
 Point the app at it:
 
