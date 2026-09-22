@@ -221,7 +221,12 @@ class EventDiscoveryRepository(
             address = address,
             latitude = latitude,
             longitude = longitude,
-            imageUrl = imageUrl,
+            // Calendar/RSS feeds (e.g. the Motorsport ICS feed) rarely carry an
+            // image, which left those cards showing an empty placeholder. Fall
+            // back to a deterministic, keyless Picsum photo seeded by the event's
+            // stable id so every discovered event has a consistent picture.
+            imageUrl = imageUrl?.takeIf { it.isNotBlank() }
+                ?: "https://picsum.photos/seed/${placeholderSeed(stableId)}/800/450",
             isPublic = true,
             organizerId = organizerId,
             organizerName = organizerName ?: source,
@@ -229,6 +234,14 @@ class EventDiscoveryRepository(
             isCreatedByUser = false
         )
     }
+
+    /**
+     * A URL-safe, stable seed for the Picsum placeholder image. Keeps only
+     * alphanumerics from the event's stable id so the same event always maps to
+     * the same photo, and never produces a broken URL.
+     */
+    private fun placeholderSeed(stableId: String): String =
+        stableId.filter { it.isLetterOrDigit() }.take(24).ifBlank { "eventfinder" }
 
     private fun mapCategory(raw: String): String {
         val value = raw.trim().lowercase()
