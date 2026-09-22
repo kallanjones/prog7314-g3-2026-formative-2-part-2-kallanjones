@@ -196,6 +196,13 @@ flowchart LR
 The event catalogue is served by **our own REST API**, which lives in [`api/`](api) and is
 documented in full in [`api/README.md`](api/README.md).
 
+**Live:** <https://eventfinder-api-si8u.onrender.com> —
+[Swagger](https://eventfinder-api-si8u.onrender.com/swagger) ·
+[health](https://eventfinder-api-si8u.onrender.com/api/health)
+
+> Hosted on Render's free plan, which spins the service down when idle. The first
+> request after a quiet period can take up to a minute while it wakes.
+
 It is an **ASP.NET Core 8 Minimal API** using **Entity Framework Core (code-first)** over
 **SQLite**. The Planning and Design document specified Azure SQL; SQLite is used instead so
 the service can be hosted on any free tier without provisioning a separate database server.
