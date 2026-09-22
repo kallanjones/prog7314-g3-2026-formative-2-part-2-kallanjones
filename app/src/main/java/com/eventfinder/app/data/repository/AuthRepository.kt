@@ -43,6 +43,15 @@ interface AuthRepository {
 
     suspend fun register(fullName: String, email: String, password: String, language: String): Result<User>
     suspend fun login(email: String, password: String): Result<User>
+
+    /**
+     * Signs in with a Google account (SSO). Creates a local profile the first
+     * time an account is seen, then signs in to it on later visits.
+     *
+     * The account has no local password — Google is the identity provider — so
+     * it can only be signed into through Google or biometrics.
+     */
+    suspend fun signInWithGoogle(email: String, fullName: String, language: String): Result<User>
     suspend fun biometricLogin(): Result<User>
     suspend fun logout()
     suspend fun updateProfile(fullName: String, email: String): Result<User>
@@ -139,6 +148,47 @@ class AuthRepositoryImpl(
         preferences.setLanguage(user.preferredLanguage)
         ReminderHelper.restoreReminders(context, eventDao, user.id)
         AppLogger.i("AuthRepository", "User signed in: ${user.email}")
+        return Result.success(user.toDomain())
+    }
+
+    override suspend fun signInWithGoogle(
+        email: String,
+        fullName: String,
+        language: String
+    ): Result<User> {
+        val normalizedEmail = email.trim().lowercase()
+        if (normalizedEmail.isBlank()) {
+            return Result.failure(IllegalArgumentException("login_invalid_credentials"))
+        }
+
+        val existing = userDao.findByEmail(normalizedEmail)
+        if (existing != null) {
+            preferences.setSessionUserId(existing.id)
+            preferences.setLanguage(existing.preferredLanguage)
+            ReminderHelper.restoreReminders(context, eventDao, existing.id)
+            AppLogger.i("AuthRepository", "Google sign-in for existing account: $normalizedEmail")
+            return Result.success(existing.toDomain())
+        }
+
+        // First sign-in with this Google account: create the local profile.
+        // A random unusable password hash is stored because Google is the
+        // identity provider; there is no local password to verify against.
+        val user = UserEntity(
+            id = UUID.randomUUID().toString(),
+            fullName = fullName.trim().ifBlank { normalizedEmail.substringBefore('@') },
+            email = normalizedEmail,
+            passwordHash = PasswordHasher.hash(UUID.randomUUID().toString()),
+            preferredLanguage = language,
+            defaultCity = "South Africa",
+            defaultRadiusKm = 50,
+            biometricEnabled = false,
+            createdAt = System.currentTimeMillis()
+        )
+        userDao.upsert(user)
+        preferences.setSessionUserId(user.id)
+        preferences.setLanguage(language)
+        ReminderHelper.restoreReminders(context, eventDao, user.id)
+        AppLogger.i("AuthRepository", "Google account linked and signed in: $normalizedEmail")
         return Result.success(user.toDomain())
     }
 

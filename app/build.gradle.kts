@@ -17,6 +17,15 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
+
+        // Google OAuth web client ID used for Google sign-in (SSO). Set it in
+        // gradle.properties; when blank the Login screen explains that sign-in
+        // is not configured instead of failing at runtime.
+        buildConfigField(
+            "String",
+            "GOOGLE_WEB_CLIENT_ID",
+            "\"${project.findProperty("GOOGLE_WEB_CLIENT_ID") as? String ?: ""}\""
+        )
     }
 
     buildTypes {
@@ -93,6 +102,11 @@ dependencies {
 
     // ---- Security SDK: AndroidX Biometric (fingerprint / face unlock) ----
     implementation("androidx.biometric:biometric:1.1.0")
+
+    // ---- Google sign-in (SSO) via Credential Manager ----
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
     // FragmentActivity host required by the BiometricPrompt SDK.
     implementation("androidx.fragment:fragment-ktx:1.6.2")

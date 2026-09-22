@@ -15,6 +15,8 @@
     <string name="login">Teken in</string>
     <string name="login_with_biometrics">Teken in met biometrie</string>
     <string name="login_google">Gaan voort met Google</string>
+    <string name="google_no_account">Geen Google-rekening op hierdie toestel nie. Voeg eers een by in Instellings.</string>
+    <string name="google_not_configured">Google-aanmelding is nie vir hierdie weergawe opgestel nie.</string>
     <string name="forgot_password">Wagwoord vergeet?</string>
     <string name="create_account">Skep \'n rekening</string>
     <string name="login_no_account">Nog nie \'n rekening nie? Skep een</string>

@@ -55,6 +55,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eventfinder.app.R
 import com.eventfinder.app.di.AppContainer
 import com.eventfinder.app.security.BiometricAuth
+import com.eventfinder.app.security.GoogleSignInClient
 import com.eventfinder.app.ui.components.resolve
 import com.eventfinder.app.utils.AppLogger
 
@@ -71,6 +72,7 @@ fun LoginScreen(
     onGuestLogin: () -> Unit = {}
 ) {
     val activity = LocalContext.current as FragmentActivity
+    val googleSignInClient = remember { GoogleSignInClient(activity) }
     val snackbarHostState = remember { SnackbarHostState() }
     val biometricAvailable = remember {
         BiometricAuth.isAvailable(activity)
@@ -240,6 +242,23 @@ fun LoginScreen(
             ) {
                 if (uiState.isSubmitting) CircularProgressIndicator(Modifier.size(22.dp))
                 else Text(stringResource(R.string.login), fontWeight = FontWeight.SemiBold)
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // Google single sign-on (FR-01).
+            OutlinedButton(
+                onClick = {
+                    viewModel.signInWithGoogle(
+                        // Credential Manager needs an Activity to show its UI.
+                        signIn = { googleSignInClient.signIn(activity) },
+                        onSuccess = onLoggedIn
+                    )
+                },
+                enabled = !uiState.isSubmitting,
+                modifier = Modifier.fillMaxWidth().height(50.dp)
+            ) {
+                Text(stringResource(R.string.login_google))
             }
 
             if (biometricAvailable && uiState.biometricEnabled) {

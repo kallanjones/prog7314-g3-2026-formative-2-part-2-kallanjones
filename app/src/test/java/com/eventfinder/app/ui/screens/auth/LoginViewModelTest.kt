@@ -3,6 +3,7 @@ package com.eventfinder.app.ui.screens.auth
 import com.eventfinder.app.R
 import com.eventfinder.app.data.repository.AuthRepository
 import com.eventfinder.app.domain.model.User
+import com.eventfinder.app.security.GoogleSignInResult
 import com.eventfinder.app.ui.components.UiMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -46,6 +47,29 @@ class LoginViewModelTest {
         override val biometricEnrolled: Flow<Boolean> = flowOf(false)
         var resetResult: Result<Unit> = Result.success(Unit)
         var lastReset: Pair<String, String>? = null
+
+        /** Email + full name of the last Google sign-in, or null if never called. */
+        var lastGoogleSignIn: Pair<String, String>? = null
+
+        override suspend fun signInWithGoogle(
+            email: String,
+            fullName: String,
+            language: String
+        ): Result<User> {
+            lastGoogleSignIn = email to fullName
+            return Result.success(
+                User(
+                    id = "google-user",
+                    fullName = fullName,
+                    email = email,
+                    preferredLanguage = language,
+                    defaultCity = "South Africa",
+                    defaultRadiusKm = 50,
+                    biometricEnabled = false,
+                    createdAt = 0L
+                )
+            )
+        }
 
         override suspend fun resetPassword(email: String, newPassword: String): Result<Unit> {
             lastReset = email to newPassword
@@ -186,5 +210,53 @@ class LoginViewModelTest {
 
         viewModel.consumePasswordReset()
         assertFalse(viewModel.uiState.value.passwordResetComplete)
+    }
+
+    @Test
+    fun `a successful Google sign-in reaches the repository and signals success`() = runTest(dispatcher) {
+        val repo = FakeAuthRepository()
+        val viewModel = LoginViewModel(repo, biometricAvailable = false)
+        var loggedIn = false
+
+        viewModel.signInWithGoogle(
+            signIn = { GoogleSignInResult.Success("Tester@Example.com", "Test User") },
+            onSuccess = { loggedIn = true }
+        )
+        advanceUntilIdle()
+
+        assertEquals("Tester@Example.com" to "Test User", repo.lastGoogleSignIn)
+        assertTrue(loggedIn)
+        assertFalse(viewModel.uiState.value.isSubmitting)
+    }
+
+    @Test
+    fun `a cancelled Google sign-in never reaches the repository`() = runTest(dispatcher) {
+        val repo = FakeAuthRepository()
+        val viewModel = LoginViewModel(repo, biometricAvailable = false)
+        var loggedIn = false
+
+        viewModel.signInWithGoogle(
+            signIn = { GoogleSignInResult.Cancelled },
+            onSuccess = { loggedIn = true }
+        )
+        advanceUntilIdle()
+
+        assertNull(repo.lastGoogleSignIn)
+        assertFalse(loggedIn)
+        assertFalse(viewModel.uiState.value.isSubmitting)
+    }
+
+    @Test
+    fun `an unconfigured Google sign-in never reaches the repository`() = runTest(dispatcher) {
+        val repo = FakeAuthRepository()
+        val viewModel = LoginViewModel(repo, biometricAvailable = false)
+
+        viewModel.signInWithGoogle(
+            signIn = { GoogleSignInResult.NotConfigured },
+            onSuccess = { }
+        )
+        advanceUntilIdle()
+
+        assertNull(repo.lastGoogleSignIn)
     }
 }

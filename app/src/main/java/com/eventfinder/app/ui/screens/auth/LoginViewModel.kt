@@ -7,6 +7,8 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.eventfinder.app.R
 import com.eventfinder.app.data.repository.AuthRepository
+import com.eventfinder.app.domain.model.SupportedLanguage
+import com.eventfinder.app.security.GoogleSignInResult
 import com.eventfinder.app.ui.components.UiMessage
 import com.eventfinder.app.utils.AppLogger
 import com.eventfinder.app.utils.RegistrationValidator
@@ -101,6 +103,53 @@ class LoginViewModel(
                     _messages.emit(UiMessage.Resource(R.string.login_failed))
                     _uiState.update { it.copy(passwordError = R.string.login_failed) }
                 }
+            _uiState.update { it.copy(isSubmitting = false) }
+        }
+    }
+
+    /**
+     * Signs in with Google (SSO, FR-01). [signIn] shows the Google account
+     * chooser; the screen supplies it because Credential Manager needs an
+     * Activity context, which a ViewModel must not hold.
+     */
+    fun signInWithGoogle(
+        signIn: suspend () -> GoogleSignInResult,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSubmitting = true) }
+
+            when (val result = signIn()) {
+                is GoogleSignInResult.Success -> {
+                    authRepository.signInWithGoogle(
+                        email = result.email,
+                        fullName = result.displayName,
+                        language = SupportedLanguage.ENGLISH.code
+                    )
+                        .onSuccess { user ->
+                            AppLogger.i("LoginViewModel", "Google sign-in succeeded for ${user.email}")
+                            _messages.emit(UiMessage.Resource(R.string.login_success))
+                            onSuccess()
+                        }
+                        .onFailure { throwable ->
+                            AppLogger.w("LoginViewModel", "Google sign-in failed: ${throwable.message}")
+                            _messages.emit(UiMessage.Resource(R.string.login_failed))
+                        }
+                }
+
+                GoogleSignInResult.Cancelled ->
+                    AppLogger.i("LoginViewModel", "Google sign-in cancelled")
+
+                GoogleSignInResult.NoAccount ->
+                    _messages.emit(UiMessage.Resource(R.string.google_no_account))
+
+                GoogleSignInResult.NotConfigured ->
+                    _messages.emit(UiMessage.Resource(R.string.google_not_configured))
+
+                GoogleSignInResult.Failed ->
+                    _messages.emit(UiMessage.Resource(R.string.login_failed))
+            }
+
             _uiState.update { it.copy(isSubmitting = false) }
         }
     }
