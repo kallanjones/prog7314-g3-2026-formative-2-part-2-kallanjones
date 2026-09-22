@@ -1,0 +1,25 @@
+# Render deployment for the EventFinder South Africa REST API.
+#
+# Render builds the Dockerfile in api/EventFinder.Api and serves it over HTTPS
+# at https://<service-name>.onrender.com.
+#
+# To deploy: push this file, then in the Render dashboard choose
+# New > Blueprint and point it at this repository. Render reads this file and
+# creates the service; no CLI or credit card is needed for the free plan.
+
+services:
+  - type: web
+    name: eventfinder-api
+    runtime: docker
+    dockerfilePath: ./api/EventFinder.Api/Dockerfile
+    dockerContext: ./api/EventFinder.Api
+    region: frankfurt   # closest Render region to South Africa
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: ASPNETCORE_HTTP_PORTS
+        value: "8080"
+      # The free plan has no persistent disk, so this file is recreated on each
+      # deploy. See the note in api/README.md before recording the demo.
+      - key: ConnectionStrings__Default
+        value: Data Source=/data/eventfinder.db

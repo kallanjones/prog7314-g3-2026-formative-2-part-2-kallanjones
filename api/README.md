@@ -328,6 +328,47 @@ API_BASE_URL_RELEASE=https://<your-app-name>.azurewebsites.net/
 - Region `southafricanorth` is Johannesburg. F1 is not available in every region; if it
   is rejected, try `westeurope`.
 
+## Deploying to Render
+
+The option that needs **no credit card and no CLI** — useful if an Azure subscription
+is not available.
+
+[`render.yaml`](../render.yaml) in the repository root already describes the service.
+
+1. Push the repository to GitHub.
+2. Sign in to [Render](https://render.com) with your GitHub account.
+3. **New → Blueprint**, select this repository, and Render reads `render.yaml`.
+4. Click **Apply**. The first build takes a few minutes.
+
+The API is then at `https://<service-name>.onrender.com`, with HTTPS provided
+automatically. Check `https://<service-name>.onrender.com/api/health`.
+
+Point the app at it:
+
+```properties
+# gradle.properties — release builds
+API_BASE_URL_RELEASE=https://<service-name>.onrender.com/
+```
+
+```properties
+# local.properties — to use the deployed API from a debug build on your phone
+api.base.url=https://<service-name>.onrender.com/
+```
+
+### Two limits of the free plan
+
+- **No persistent disk.** The SQLite file is recreated whenever the service
+  redeploys or restarts, so events created earlier disappear. Within one sitting
+  everything works normally, which is enough to demonstrate the full round-trip —
+  just create the events during the demo rather than beforehand.
+- **Services sleep after inactivity**, and the first request afterwards takes
+  roughly a minute. **Open the URL once before recording** so the cold start is not
+  mistaken for a bug.
+
+If the data needs to survive properly, add a free hosted Postgres (Neon or Supabase)
+and switch the EF Core provider to Npgsql — the schema is code-first, so it is a small
+change.
+
 ## Deploying elsewhere
 
 The container runs on any host that takes a Docker image — Render, Koyeb, Railway,

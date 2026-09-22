@@ -246,13 +246,14 @@ The base URL is a `BuildConfig` field set in `app/build.gradle.kts`:
 The API ships with a [`Dockerfile`](api/EventFinder.Api/Dockerfile), so it runs on any
 container host. [`api/README.md`](api/README.md) has step-by-step instructions for:
 
-- **[Azure App Service](api/README.md#deploying-to-azure-app-service)** — the stack named in
-  the Part 1 design document; the database lives on the persistent `/home` share.
-- **[Fly.io](api/README.md#deploying-to-flyio)** — configured in
-  [`fly.toml`](api/EventFinder.Api/fly.toml) with a volume mounted at `/data`.
+| Host | Config | Card needed | Database survives redeploys |
+| --- | --- | --- | --- |
+| **[Render](api/README.md#deploying-to-render)** | [`render.yaml`](render.yaml) | No | No — free plan has no disk |
+| **[Azure App Service](api/README.md#deploying-to-azure-app-service)** | — | No, with Azure for Students | Yes — on the `/home` share |
+| **[Fly.io](api/README.md#deploying-to-flyio)** | [`fly.toml`](api/EventFinder.Api/fly.toml) | Yes | Yes — on a mounted volume |
 
-Either way the SQLite file must sit on storage that survives restarts, or the event
-catalogue resets on every deploy.
+Azure is the stack named in the Part 1 design document. Render is the quickest to get
+running when no Azure subscription is available.
 
 **Testing on a physical phone:** `10.0.2.2` only works inside the emulator. Put your
 laptop's LAN address in `local.properties` instead — it is gitignored, so each machine
