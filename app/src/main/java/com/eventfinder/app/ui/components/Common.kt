@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -42,8 +43,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import com.eventfinder.app.R
 import com.eventfinder.app.domain.model.Event
 import com.eventfinder.app.domain.model.EventCategory
@@ -163,6 +166,57 @@ fun categoryLabel(category: EventCategory): Int = when (category) {
     EventCategory.OTHER -> R.string.all_categories
 }
 
+/**
+ * Robust event image loader used everywhere the app renders a remote or local
+ * picture. Unlike a bare [coil.compose.AsyncImage] it:
+ *
+ * - crossfades the bitmap in so it never "pops",
+ * - shows a small progress spinner while the network request is in flight, and
+ * - falls back to a branded placeholder (surface tint + icon) if the URL is
+ *   null, empty or fails to load.
+ *
+ * The failed/empty case is what made some PNGs render as blank boxes before:
+ * an unreachable image now degrades gracefully instead of leaving a gap.
+ */
+@Composable
+fun EventImage(
+    imageUrl: String?,
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+    contentScale: ContentScale = ContentScale.Crop
+) {
+    val context = LocalContext.current
+    val request = ImageRequest.Builder(context)
+        .data(imageUrl?.takeIf { it.isNotBlank() })
+        .crossfade(true)
+        .build()
+
+    SubcomposeAsyncImage(
+        model = request,
+        contentDescription = contentDescription,
+        contentScale = contentScale,
+        modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant),
+        loading = {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        },
+        error = {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Icon(
+                    Icons.Outlined.ImageNotSupported,
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    )
+}
+
 /** Reusable event card used on the Home list, Search and Favorites screens. */
 @Composable
 fun EventCard(
@@ -181,14 +235,12 @@ fun EventCard(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AsyncImage(
-                model = event.imageUrl,
+            EventImage(
+                imageUrl = event.imageUrl,
                 contentDescription = stringResource(R.string.event_image),
-                contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(88.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
             )
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {

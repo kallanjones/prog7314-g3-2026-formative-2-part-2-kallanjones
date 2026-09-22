@@ -60,7 +60,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -68,7 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
+import com.eventfinder.app.ui.components.EventImage
 import com.eventfinder.app.R
 import com.eventfinder.app.data.repository.describeWeatherCode
 import com.eventfinder.app.di.AppContainer
@@ -139,10 +138,9 @@ fun EventDetailScreen(
                     ) {
                         // Hero image with back + favourite controls
                         Box(Modifier.fillMaxWidth().height(230.dp)) {
-                            AsyncImage(
-                                model = event.imageUrl,
+                            EventImage(
+                                imageUrl = event.imageUrl,
                                 contentDescription = stringResource(R.string.event_image),
-                                contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
                             IconButton(

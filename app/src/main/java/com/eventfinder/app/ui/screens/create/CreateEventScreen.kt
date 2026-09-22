@@ -58,7 +58,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -68,7 +67,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
+import com.eventfinder.app.ui.components.EventImage
 import com.eventfinder.app.R
 import com.eventfinder.app.di.AppContainer
 import com.eventfinder.app.data.repository.IMAGE_REMOVED
@@ -258,10 +257,9 @@ private fun StepDetails(viewModel: CreateEventViewModel, onPickImage: () -> Unit
     val descriptionError = state.showErrors && state.description.length < MIN_DESCRIPTION_LENGTH
 
     if (state.imageUrl != null && state.imageUrl != IMAGE_REMOVED) {
-        AsyncImage(
-            model = state.imageUrl,
+        EventImage(
+            imageUrl = state.imageUrl,
             contentDescription = stringResource(R.string.event_image),
-            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(170.dp)
@@ -448,10 +446,9 @@ private fun StepReview(state: CreateEventUiState) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             state.imageUrl?.takeIf { it != IMAGE_REMOVED }?.let { image ->
-                AsyncImage(
-                    model = image,
+                EventImage(
+                    imageUrl = image,
                     contentDescription = stringResource(R.string.event_image),
-                    contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(150.dp)
