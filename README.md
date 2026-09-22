@@ -20,7 +20,7 @@ The repository holds two projects:
 
 ## Demonstration video
 
-https://www.youtube.com/watch?v=5mLOJ4WQHh4
+https://youtu.be/8Hr-pQSrUFs
 
 Covers sign-in including Google SSO, the settings menu, the data round trip against the
 hosted REST API, and the user-defined features.
