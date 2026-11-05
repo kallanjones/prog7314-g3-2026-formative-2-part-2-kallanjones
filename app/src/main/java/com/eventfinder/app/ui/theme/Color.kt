@@ -43,3 +43,33 @@ val Navy = BrandBlue
 val Red = BrandRed
 val OffWhite = SurfaceOffWhite
 val Charcoal = SurfaceInk
+
+// --- Screen accent & surface colours ---
+// Named here (rather than hard-coded in individual screens) so the showcase
+// screens draw from one palette. The bright accent green below is the "vibrant"
+// accent used across cards and CTAs; it is intentionally lighter than the SA
+// flag [BrandGreen] used for the core brand mark.
+val AccentGreen = Color(0xFF00C98D)
+val AccentGreenDark = Color(0xFF00A274)
+val AccentGreenDeep = Color(0xFF06201A)
+val ShowcaseNavy = Color(0xFF0B1929)
+val ShowcaseNavyRaised = Color(0xFF1E2933)
+val SlateDark = Color(0xFF334155)
+val SlateGrey = Color(0xFF94A3B8)
+val SlateGreyMuted = Color(0xFF94A3BB)
+
+// Status / accent colours
+val DangerRed = Color(0xFFEF4444)
+val WarningAmber = Color(0xFFF59E0B)
+val WarmAmber = Color(0xFFF4A261)
+val AccentPurple = Color(0xFF7C4DFF)
+
+// Third-party brand colours (fixed by each brand's guidelines)
+val GoogleBlue = Color(0xFF4285F4)
+val GoogleBlueDark = Color(0xFF1A73E8)
+val WhatsAppGreen = Color(0xFF25D366)
+val AndroidGreen = Color(0xFF3DDC84)
+
+// Scrims for image/photo overlays
+val ScrimStrong = Color(0xE6000000)
+val ScrimSoft = Color(0x33000000)

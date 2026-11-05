@@ -52,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.eventfinder.app.ui.theme.DangerRed
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -79,7 +80,7 @@ private val BrandGreen: Color
     /** Brand accent that stays legible: emerald on night surfaces, the
      *  darker brand green on white surfaces. */
     @Composable get() = MaterialTheme.colorScheme.primary
-private val DangerRed = Color(0xFFEF4444)
+private val DangerRed = DangerRed
 
 /** Reasons offered on the Report a Scam screen, in showcase order. */
 private val SCAM_REASONS = listOf(

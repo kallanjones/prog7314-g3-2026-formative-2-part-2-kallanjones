@@ -25,6 +25,19 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.graphics.Color
+import com.eventfinder.app.ui.theme.AccentGreen
+import com.eventfinder.app.ui.theme.AccentGreenDark
+import com.eventfinder.app.ui.theme.ShowcaseNavy
+import com.eventfinder.app.ui.theme.ShowcaseNavyRaised
+import com.eventfinder.app.ui.theme.SlateDark
+import com.eventfinder.app.ui.theme.SlateGrey
+import com.eventfinder.app.ui.theme.SlateGreyMuted
+import com.eventfinder.app.ui.theme.WarningAmber
+import com.eventfinder.app.ui.theme.AccentPurple
+import com.eventfinder.app.ui.theme.GoogleBlue
+import com.eventfinder.app.ui.theme.GoogleBlueDark
+import com.eventfinder.app.ui.theme.WhatsAppGreen
+import com.eventfinder.app.ui.theme.AndroidGreen
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.eventfinder.app.ui.components.EventCard
 import com.eventfinder.app.ui.components.UiMessage
@@ -953,14 +966,14 @@ fun EventDetailScreen(
                                 Surface(
                                     onClick = { showShareSheet = true },
                                     shape = CircleShape,
-                                    color = Color(0xFF00C98D),
+                                    color = AccentGreen,
                                     modifier = Modifier.size(48.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
                                             painter = painterResource(R.drawable.ic_ms_share),
                                             contentDescription = stringResource(R.string.share),
-                                            tint = Color(0xFF0B1929),
+                                            tint = ShowcaseNavy,
                                             modifier = Modifier.size(24.dp)
                                         )
                                     }
@@ -1291,7 +1304,7 @@ fun EventDetailScreen(
                         colors = ButtonDefaults.buttonColors(
                             containerColor = com.eventfinder.app.ui.components.EventFinderTokens.Green,
                             contentColor = com.eventfinder.app.ui.components.EventFinderTokens.Night,
-                            disabledContainerColor = Color(0xFF1E2933),
+                            disabledContainerColor = ShowcaseNavyRaised,
                             disabledContentColor = com.eventfinder.app.ui.components.EventFinderTokens.TextSecondary
                         )
                     ) {
@@ -1502,27 +1515,27 @@ private fun ShareSheet(
             ) {
                 ShareTarget(
                     label = "WhatsApp",
-                    color = Color(0xFF25D366),
+                    color = WhatsAppGreen,
                     icon = R.drawable.ic_brand_whatsapp
                 ) { sendTo("com.whatsapp") }
                 ShareTarget(
                     label = "Messages",
-                    color = Color(0xFF3DDC84),
+                    color = AndroidGreen,
                     icon = R.drawable.ic_ms_chat
                 ) { sendTo("com.google.android.apps.messaging") }
                 ShareTarget(
                     label = "Email",
-                    color = Color(0xFF1A73E8),
+                    color = GoogleBlueDark,
                     icon = R.drawable.ic_ms_mail
                 ) { sendTo(null, type = "message/rfc822") }
                 ShareTarget(
                     label = "Copy Link",
-                    color = Color(0xFF7C4DFF),
+                    color = AccentPurple,
                     icon = R.drawable.ic_ms_copy
                 ) { copyLink() }
                 ShareTarget(
                     label = "Nearby",
-                    color = Color(0xFF4285F4),
+                    color = GoogleBlue,
                     icon = R.drawable.ic_ms_share
                 ) { sendTo(null) }
             }
@@ -1662,10 +1675,10 @@ private fun StatusChip(label: String, color: Color) {
 @Composable
 private fun ProvenanceBadge(provenance: String) {
     val (label, color) = when (provenance.lowercase()) {
-        "live" -> "Live" to Color(0xFF00C98D)
-        "cached" -> "Cached" to Color(0xFF4285F4)
-        "imported" -> "Imported" to Color(0xFFF59E0B)
-        else -> "Sample" to Color(0xFF94A3B8)
+        "live" -> "Live" to AccentGreen
+        "cached" -> "Cached" to GoogleBlue
+        "imported" -> "Imported" to WarningAmber
+        else -> "Sample" to SlateGrey
     }
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -1773,12 +1786,12 @@ private fun GroupPlanningCard(
     val isDarkSurface = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val titleColor = if (isDarkSurface) Color.White else MaterialTheme.colorScheme.onSurface
     val subtitleColor =
-        if (isDarkSurface) Color(0xFF94A3BB) else MaterialTheme.colorScheme.onSurfaceVariant
+        if (isDarkSurface) SlateGreyMuted else MaterialTheme.colorScheme.onSurfaceVariant
 
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val buttonContainer by animateColorAsState(
-        targetValue = if (pressed) Color(0xFF00A274) else Color(0xFF00C98D),
+        targetValue = if (pressed) AccentGreenDark else AccentGreen,
         label = "InviteButtonContainer"
     )
 
@@ -1892,9 +1905,9 @@ private fun GroupPlanningCard(
                 shape = RoundedCornerShape(22.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = buttonContainer,
-                    contentColor = Color(0xFF0B1929),
-                    disabledContainerColor = Color(0xFF334155),
-                    disabledContentColor = Color(0xFF94A3BB)
+                    contentColor = ShowcaseNavy,
+                    disabledContainerColor = SlateDark,
+                    disabledContentColor = SlateGreyMuted
                 ),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                 interactionSource = interactionSource

@@ -43,6 +43,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.graphics.Color
+import com.eventfinder.app.ui.theme.AccentGreenDeep
+import com.eventfinder.app.ui.theme.DangerRed
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -291,7 +293,7 @@ fun BrandPrimaryButton(text: String, modifier: Modifier = Modifier, onClick: () 
         shape = RoundedCornerShape(26.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = BrandGreen,
-            contentColor = Color(0xFF06201A)
+            contentColor = AccentGreenDeep
         )
     ) {
         Text(text, fontWeight = FontWeight.Bold)
@@ -327,7 +329,7 @@ fun BrandDangerButton(text: String, modifier: Modifier = Modifier, onClick: () -
             .height(52.dp),
         shape = RoundedCornerShape(26.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFFEF4444),
+            containerColor = DangerRed,
             contentColor = Color.White
         )
     ) {

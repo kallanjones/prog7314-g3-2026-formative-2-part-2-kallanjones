@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.eventfinder.app.ui.theme.AccentGreen
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -28,7 +29,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileWriter
 
-private val BrandGreen = Color(0xFF00C98D)
+private val BrandGreen = AccentGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -21,6 +21,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.eventfinder.app.ui.theme.AccentGreen
+import com.eventfinder.app.ui.theme.ShowcaseNavy
+import com.eventfinder.app.ui.theme.WarmAmber
+import com.eventfinder.app.ui.theme.GoogleBlue
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.eventfinder.app.di.AppContainer
@@ -324,7 +328,7 @@ private fun AvatarStack(count: Int) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         val shown = count.coerceIn(1, 3)
         repeat(shown) { index ->
-            val palette = listOf(Color(0xFF00C98D), Color(0xFF4285F4), Color(0xFFF4A261))
+            val palette = listOf(AccentGreen, GoogleBlue, WarmAmber)
             Box(
                 modifier = Modifier
                     .padding(start = if (index == 0) 0.dp else (-10).dp)
@@ -336,7 +340,7 @@ private fun AvatarStack(count: Int) {
                     text = listOf("A", "T", "S")[index % 3],
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0B1929)
+                    color = ShowcaseNavy
                 )
             }
         }

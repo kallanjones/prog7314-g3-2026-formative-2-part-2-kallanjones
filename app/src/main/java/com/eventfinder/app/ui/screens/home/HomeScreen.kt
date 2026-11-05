@@ -97,6 +97,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import com.eventfinder.app.ui.theme.GoogleBlue
+import com.eventfinder.app.ui.theme.ScrimStrong
+import com.eventfinder.app.ui.theme.ScrimSoft
 import androidx.compose.ui.graphics.ColorFilter
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
@@ -1071,7 +1074,7 @@ private fun RoutePanel(
                 Icon(
                     imageVector = Icons.Outlined.Directions,
                     contentDescription = null,
-                    tint = Color(0xFF4285F4),
+                    tint = GoogleBlue,
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(Modifier.width(8.dp))
@@ -1141,7 +1144,7 @@ private fun RoutePanel(
                         CircularProgressIndicator(
                             modifier = Modifier.size(18.dp),
                             strokeWidth = 2.dp,
-                            color = Color(0xFF4285F4)
+                            color = GoogleBlue
                         )
                         Spacer(Modifier.width(10.dp))
                         Text(
@@ -1185,11 +1188,11 @@ private fun RoutePanel(
                                 val selected = index == state.selectedRouteIndex
                                 Surface(
                                     shape = RoundedCornerShape(12.dp),
-                                    color = if (selected) Color(0xFF4285F4).copy(alpha = 0.16f)
+                                    color = if (selected) GoogleBlue.copy(alpha = 0.16f)
                                     else MaterialTheme.colorScheme.surfaceVariant,
                                     border = BorderStroke(
                                         1.dp,
-                                        if (selected) Color(0xFF4285F4) else MaterialTheme.colorScheme.outlineVariant
+                                        if (selected) GoogleBlue else MaterialTheme.colorScheme.outlineVariant
                                     ),
                                     modifier = Modifier.clickable { onSelectAlternative(index) }
                                 ) {
@@ -1197,7 +1200,7 @@ private fun RoutePanel(
                                         text = "${index + 1} · ${formatRouteDuration(option.durationSeconds)}",
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = if (selected) Color(0xFF4285F4)
+                                        color = if (selected) GoogleBlue
                                         else MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                                     )
@@ -1212,7 +1215,7 @@ private fun RoutePanel(
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                         shape = RoundedCornerShape(24.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF4285F4),
+                            containerColor = GoogleBlue,
                             contentColor = Color.White
                         )
                     ) {
@@ -1244,11 +1247,11 @@ private fun RouteModeChip(
 ) {
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = if (selected) Color(0xFF4285F4).copy(alpha = 0.16f)
+        color = if (selected) GoogleBlue.copy(alpha = 0.16f)
         else MaterialTheme.colorScheme.surfaceVariant,
         border = BorderStroke(
             1.dp,
-            if (selected) Color(0xFF4285F4) else MaterialTheme.colorScheme.outlineVariant
+            if (selected) GoogleBlue else MaterialTheme.colorScheme.outlineVariant
         ),
         modifier = Modifier
             .height(48.dp)
@@ -1261,7 +1264,7 @@ private fun RouteModeChip(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (selected) Color(0xFF4285F4) else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (selected) GoogleBlue else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(18.dp)
             )
             Spacer(Modifier.width(6.dp))
@@ -1269,7 +1272,7 @@ private fun RouteModeChip(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = if (selected) Color(0xFF4285F4) else MaterialTheme.colorScheme.onSurfaceVariant
+                color = if (selected) GoogleBlue else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -1590,8 +1593,8 @@ private fun FeaturedEventCard(
                         Brush.verticalGradient(
                             colors = listOf(
                                 Color.Transparent,
-                                Color(0x33000000),
-                                Color(0xE6000000)
+                                ScrimSoft,
+                                ScrimStrong
                             )
                         )
                     )

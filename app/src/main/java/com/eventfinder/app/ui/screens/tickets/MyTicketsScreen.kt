@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.eventfinder.app.ui.theme.AccentGreen
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -51,7 +52,7 @@ import com.eventfinder.app.utils.DateTimeUtils
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-private val BrandGreen = Color(0xFF00C98D)
+private val BrandGreen = AccentGreen
 
 /**
  * "My Tickets" — every ticket the signed-in user holds, with its QR code.
