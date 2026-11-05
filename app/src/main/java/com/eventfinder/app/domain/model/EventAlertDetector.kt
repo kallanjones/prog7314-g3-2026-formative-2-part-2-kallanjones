@@ -17,6 +17,9 @@ object EventAlertDetector {
         val isEmpty: Boolean get() = newEvents.isEmpty() && updatedFavorites.isEmpty()
     }
 
+    /** Built-in demo events seeded by SampleEventsProvider. */
+    private fun isSample(event: Event): Boolean = event.id.startsWith("sample-")
+
     /** Events that changed enough to be worth re-notifying about. */
     private fun materiallyChanged(previous: Event, current: Event): Boolean =
         previous.title != current.title ||
@@ -36,12 +39,18 @@ object EventAlertDetector {
         now: Long = System.currentTimeMillis()
     ): Alerts {
         val future = current.filter { it.startDate > now }
-        // Only treat events as "new" when we actually had a previous catalogue;
-        // the very first sync of a fresh install would otherwise alert the world.
-        val newEvents = if (previous.isEmpty()) {
-            emptyList()
-        } else {
-            future.filter { it.id !in previous }
+        // An event is only "new" if it comes from a source whose events were already
+        // in the previous catalogue. Feeds are saved one at a time, so on a fresh
+        // install the first feed (or the built-in samples) would otherwise make every
+        // later feed's events look new and post a burst of alerts on first launch.
+        val knownSources = previous.values
+            .filterNot { isSample(it) }
+            .mapTo(HashSet()) { it.organizerId }
+        val newEvents = future.filter {
+            it.id !in previous &&
+                it.organizerId in knownSources &&
+                !isSample(it) &&
+                !it.isCreatedByUser
         }
         val updatedFavorites = future.filter { event ->
             event.id in favoriteIds &&

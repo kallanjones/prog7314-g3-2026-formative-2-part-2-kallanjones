@@ -16,7 +16,9 @@ class EventAlertDetectorTest {
         id: String,
         title: String = "Title",
         venue: String = "Venue",
-        start: Long = now + 86_400_000L
+        start: Long = now + 86_400_000L,
+        organizerId: String = "org",
+        createdByUser: Boolean = false
     ) = Event(
         id = id,
         title = title,
@@ -30,12 +32,53 @@ class EventAlertDetectorTest {
         longitude = 28.0,
         imageUrl = null,
         isPublic = true,
-        organizerId = "org",
+        organizerId = organizerId,
         organizerName = "Organizer",
         attendeeCount = 0,
         isFavorite = false,
-        isCreatedByUser = false
+        isCreatedByUser = createdByUser
     )
+
+    @Test
+    fun `events from a feed seen for the first time are not alerted`() {
+        // Fresh install: one feed has been saved, the next one arrives.
+        val alerts = EventAlertDetector.detect(
+            previous = mapOf("a" to event("a", organizerId = "feed-1")),
+            current = listOf(event("a", organizerId = "feed-1"), event("b", organizerId = "feed-2")),
+            favoriteIds = emptySet(),
+            now = now
+        )
+
+        assertTrue(alerts.newEvents.isEmpty())
+    }
+
+    @Test
+    fun `a catalogue of only sample events does not count as previous`() {
+        val alerts = EventAlertDetector.detect(
+            previous = mapOf("sample-jhb-music" to event("sample-jhb-music", organizerId = "sample-org-1")),
+            current = listOf(event("b", organizerId = "feed-1")),
+            favoriteIds = emptySet(),
+            now = now
+        )
+
+        assertTrue(alerts.newEvents.isEmpty())
+    }
+
+    @Test
+    fun `sample events and the user's own events are never alerted`() {
+        val alerts = EventAlertDetector.detect(
+            previous = mapOf("a" to event("a")),
+            current = listOf(
+                event("a"),
+                event("sample-new", organizerId = "org"),
+                event("mine", createdByUser = true)
+            ),
+            favoriteIds = emptySet(),
+            now = now
+        )
+
+        assertTrue(alerts.newEvents.isEmpty())
+    }
 
     @Test
     fun `first sync with an empty previous catalogue produces no alerts`() {
