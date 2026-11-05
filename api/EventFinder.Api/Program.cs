@@ -1,224 +1,272 @@
-using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.RateLimiting;
 using EventFinder.Api.Data;
-using EventFinder.Api.Models;
-using Microsoft.Data.Sqlite;
+using EventFinder.Api.Endpoints;
+using EventFinder.Api.Services;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-
-// EventFinder South Africa REST API.
-//
-// A minimal ASP.NET Core Web API backed by EF Core + SQLite, as specified in
-// section 5 of the Planning and Design document. Minimal APIs are used instead
-// of controllers to keep the whole surface readable in one file.
+using Microsoft.IdentityModel.Tokens;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// SQLite lives beside the app so no database server has to be provisioned.
-var connectionString = builder.Configuration.GetConnectionString("Default")
-    ?? "Data Source=eventfinder.db";
+// Never allow a known development JWT secret in production.
+const string DevelopmentJwtSecret =
+    "DEV-ONLY-Secret-Replace-In-Production-0123456789abcdef";
 
-builder.Services.AddDbContext<EventFinderDbContext>(options =>
-    options.UseSqlite(connectionString));
+var configuredJwtSecret = builder.Configuration["Jwt:Secret"];
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+if (builder.Environment.IsProduction())
+{
+    if (string.IsNullOrWhiteSpace(configuredJwtSecret) ||
+        configuredJwtSecret == DevelopmentJwtSecret ||
+        Encoding.UTF8.GetByteCount(configuredJwtSecret) < 32)
+    {
+        throw new InvalidOperationException(
+            "Production requires a strong, unique Jwt:Secret of at least 32 bytes. " +
+            "Configure it using an environment variable or secret manager.");
+    }
+}
+else
+{
+    // Development and ordinary local tests can run without a deployed secret.
+    if (string.IsNullOrWhiteSpace(configuredJwtSecret))
+    {
+        configuredJwtSecret = DevelopmentJwtSecret;
+        // Publish the fallback through configuration as well, so every consumer
+        // of IConfiguration (TokenService, for example) signs and validates with
+        // exactly the same development secret instead of failing with
+        // "Jwt:Secret is not configured.".
+        builder.Configuration["Jwt:Secret"] = DevelopmentJwtSecret;
+    }
+}
 
-// The Android client calls this from a device, so allow cross-origin callers.
-builder.Services.AddCors(options =>
-    options.AddDefaultPolicy(policy =>
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    var connectionString =
+        builder.Configuration.GetConnectionString("Default");
+
+
+    if (string.IsNullOrWhiteSpace(connectionString))
+    {
+        throw new InvalidOperationException(
+            "ConnectionStrings:Default must be configured.");
+    }
+
+
+    options.UseNpgsql(NpgsqlConnectionString.Normalize(connectionString));
+});
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var secret = configuredJwtSecret
+            ?? throw new InvalidOperationException("Jwt:Secret is not configured.");
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "eventfinder-api",
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "eventfinder-app",
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(1),
+            NameClaimType = "sub",
+        };
+        options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var sub = context.Principal?.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)
+                          ?? context.Principal?.FindFirstValue("sub");
+                var tvClaim = context.Principal?.FindFirstValue("tv");
+                if (!Guid.TryParse(sub, out var userId))
+                {
+                    context.Fail("Invalid subject.");
+                    return;
+                }
+                using var scope = context.HttpContext.RequestServices.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+                if (user is null)
+                {
+                    context.Fail("User not found.");
+                    return;
+                }
+                if (tvClaim is null || !int.TryParse(tvClaim, out var tokenVersion) || tokenVersion != user.TokenVersion)
+                {
+                    context.Fail("Token has been revoked.");
+                }
+            }
+        };
+    });
+builder.Services.AddAuthorization();
+
+builder.Services.Configure<ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // Configure trusted proxy addresses for the actual hosting environment.
+    // When deployed on Render (or another proxy), add the proxy's IP addresses/nets here
+    // so that RateLimiter correctly partitions requests by the real client IP.
+    // Example for Render: o.ForwardedAddresses.Add(IPAddress.Parse("10.0.0.1"));
+    // Never trust arbitrary forwarded IP headers from untrusted clients.
+});
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("auth", context =>
+    {
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
+        {
+            Window = TimeSpan.FromMinutes(1),
+            PermitLimit = 20,
+            QueueLimit = 0,
+        });
+    });
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+
+builder.Services.AddSingleton<TokenService>();
+builder.Services.AddSingleton<FirebaseTokenService>();
+builder.Services.AddHttpClient<GoogleTokenVerifier>();
+builder.Services.AddHttpClient<IEmailService, EmailService>();
+// Azure Blob Storage (free tier). The service reports itself as
+// unavailable when the Azure credentials are missing, so the app keeps
+// its local-file fallback instead of failing.
+builder.Services.AddSingleton<IBlobStorageService, AzureBlobStorageService>();
+
+// Initialize Firebase Admin SDK for custom token generation.
+// The service account JSON can be provided via Firebase:ServiceAccountJson configuration,
+// otherwise default credentials are used (e.g., on Google Cloud / Render managed environments).
+// In test environments without credentials, Firebase auth features will be unavailable
+// but the rest of the API remains functional.
+try
+{
+    var serviceAccountJson = builder.Configuration["Firebase:ServiceAccountJson"];
+    if (!string.IsNullOrWhiteSpace(serviceAccountJson))
+    {
+        FirebaseApp.Create(new AppOptions
+        {
+            Credential = GoogleCredential.FromJson(serviceAccountJson)
+        });
+    }
+    else
+    {
+        FirebaseApp.Create();
+    }
+}
+catch
+{
+    // Firebase unavailable — custom token endpoint will return 503
+}
 
 var app = builder.Build();
 
-// SQLite will not create missing directories, and hosts put the writable disk in
-// different places — /data on Fly and Docker, /home/data on Azure App Service.
-// Create the folder first so any of them works without a manual step.
-var dataSource = new SqliteConnectionStringBuilder(connectionString).DataSource;
-if (!string.IsNullOrWhiteSpace(dataSource))
+// Apply pending EF Core migrations automatically on boot (code-first workflow).
+using (var scope = app.Services.CreateScope())
 {
-    var directory = Path.GetDirectoryName(Path.GetFullPath(dataSource));
-    if (!string.IsNullOrEmpty(directory))
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    // The migrations in this project target PostgreSQL. The integration test
+    // host swaps in an isolated SQLite database, which cannot apply them, so
+    // the test schema is created directly from the model. Every PostgreSQL
+    // target — production and local development alike — applies the real
+    // migrations, so schema drift is caught locally instead of in production.
+    if (db.Database.IsNpgsql())
     {
-        Directory.CreateDirectory(directory);
+        db.Database.Migrate();
+    }
+    else
+    {
+        db.Database.EnsureCreated();
     }
 }
 
-// Create the database on first run so a fresh deployment needs no manual step.
-using (var scope = app.Services.CreateScope())
+var emailConfigured = !string.IsNullOrWhiteSpace(app.Configuration["Brevo:ApiKey"]);
+var googleConfigured = !string.IsNullOrWhiteSpace(app.Configuration["Google:ServerClientId"]);
+if (!emailConfigured)
 {
-    var db = scope.ServiceProvider.GetRequiredService<EventFinderDbContext>();
-    db.Database.EnsureCreated();
+    if (app.Environment.IsProduction())
+        app.Logger.LogWarning("Brevo:ApiKey is not configured — password-reset emails cannot be sent.");
+    else
+        app.Logger.LogInformation("Brevo:ApiKey is not configured — running in development fallback (no email sent).");
 }
 
-app.UseCors();
-app.UseSwagger();
-app.UseSwaggerUI();
+app.UseForwardedHeaders();
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseRateLimiter();
 
-// ---------------------------------------------------------------------------
-// Health
-// ---------------------------------------------------------------------------
+// Landing page so the service root is not a 404.
+app.MapGet("/", () => Results.Json(new
+{
+    service = "EventFinder.Api",
+    status = "ok",
+    health = "/health",
+})).WithTags("Health");
 
-app.MapGet("/", () => Results.Redirect("/swagger"))
-    .ExcludeFromDescription();
+// API health-check endpoint (used by uptime monitors and Render deploy checks).
+app.MapGet("/health", (IBlobStorageService blobStorage) => Results.Json(new
+{
+    status = "Healthy",
+    service = "EventFinder.Api",
+    utc = DateTime.UtcNow,
+    emailConfigured,
+    googleConfigured,
+    blobStorageConfigured = blobStorage.IsConfigured,
+})).WithTags("Health");
 
-app.MapGet("/api/health", () =>
-        Results.Ok(ApiResponse<object>.Ok(new { status = "healthy", utc = DateTimeOffset.UtcNow })))
-    .WithName("GetHealth");
-
-// ---------------------------------------------------------------------------
-// Events
-// ---------------------------------------------------------------------------
-
-// GET /api/events — newest-first list, optionally filtered by category or text.
-app.MapGet("/api/events", async (
-        EventFinderDbContext db,
-        string? category,
-        string? q,
-        int page = 1,
-        int pageSize = 50) =>
-    {
-        if (page < 1) page = 1;
-        pageSize = Math.Clamp(pageSize, 1, 200);
-
-        var query = db.Events.AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(category) && !category.Equals("ALL", StringComparison.OrdinalIgnoreCase))
-        {
-            query = query.Where(e => e.Category == category.ToUpperInvariant());
-        }
-
-        if (!string.IsNullOrWhiteSpace(q))
-        {
-            var term = q.Trim();
-            query = query.Where(e =>
-                EF.Functions.Like(e.Title, $"%{term}%") ||
-                EF.Functions.Like(e.VenueName, $"%{term}%"));
-        }
-
-        var events = await query
-            .OrderBy(e => e.StartDate)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
-
-        return Results.Ok(ApiResponse<List<EventEntity>>.Ok(events));
-    })
-    .WithName("GetEvents");
-
-// GET /api/events/{id}
-app.MapGet("/api/events/{id}", async (EventFinderDbContext db, string id) =>
-    {
-        var found = await db.Events.FindAsync(id);
-
-        return found is null
-            ? Results.NotFound(ApiResponse<EventEntity>.Fail($"No event with id '{id}'."))
-            : Results.Ok(ApiResponse<EventEntity>.Ok(found));
-    })
-    .WithName("GetEventById");
-
-// POST /api/events
-app.MapPost("/api/events", async (EventFinderDbContext db, EventRequest request) =>
-    {
-        if (Validate(request) is { Count: > 0 } errors)
-        {
-            return Results.BadRequest(ApiResponse<EventEntity>.Fail("Validation failed.", errors));
-        }
-
-        var entity = new EventEntity();
-        Apply(request, entity);
-
-        db.Events.Add(entity);
-        await db.SaveChangesAsync();
-
-        return Results.Created(
-            $"/api/events/{entity.Id}",
-            ApiResponse<EventEntity>.Ok(entity, "Event created."));
-    })
-    .WithName("CreateEvent");
-
-// PUT /api/events/{id}
-app.MapPut("/api/events/{id}", async (EventFinderDbContext db, string id, EventRequest request) =>
-    {
-        var existing = await db.Events.FindAsync(id);
-        if (existing is null)
-        {
-            return Results.NotFound(ApiResponse<EventEntity>.Fail($"No event with id '{id}'."));
-        }
-
-        if (Validate(request) is { Count: > 0 } errors)
-        {
-            return Results.BadRequest(ApiResponse<EventEntity>.Fail("Validation failed.", errors));
-        }
-
-        Apply(request, existing);
-        existing.UpdatedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
-        await db.SaveChangesAsync();
-
-        return Results.Ok(ApiResponse<EventEntity>.Ok(existing, "Event updated."));
-    })
-    .WithName("UpdateEvent");
-
-// DELETE /api/events/{id}
-app.MapDelete("/api/events/{id}", async (EventFinderDbContext db, string id) =>
-    {
-        var existing = await db.Events.FindAsync(id);
-        if (existing is null)
-        {
-            return Results.NotFound(ApiResponse<string>.Fail($"No event with id '{id}'."));
-        }
-
-        db.Events.Remove(existing);
-        await db.SaveChangesAsync();
-
-        return Results.Ok(ApiResponse<string>.Ok(id, "Event deleted."));
-    })
-    .WithName("DeleteEvent");
+app.MapAuthEndpoints();
+app.MapEventEndpoints();
+app.MapReviewEndpoints();
+app.MapBlobEndpoints();
 
 app.Run();
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/// <summary>Runs data-annotation validation plus the date-order rule.</summary>
-static List<string> Validate(EventRequest request)
-{
-    var context = new ValidationContext(request);
-    var results = new List<ValidationResult>();
-    Validator.TryValidateObject(request, context, results, validateAllProperties: true);
-
-    var errors = results
-        .Select(r => r.ErrorMessage ?? "Invalid value.")
-        .ToList();
-
-    if (request.EndDate < request.StartDate)
-    {
-        errors.Add("endDate must not be before startDate.");
-    }
-
-    return errors;
-}
-
-/// <summary>Copies a request onto an entity, leaving Id and CreatedAt alone.</summary>
-static void Apply(EventRequest request, EventEntity entity)
-{
-    entity.Title = request.Title.Trim();
-    entity.Description = request.Description.Trim();
-    entity.Category = string.IsNullOrWhiteSpace(request.Category)
-        ? "OTHER"
-        : request.Category.Trim().ToUpperInvariant();
-    entity.StartDate = request.StartDate;
-    entity.EndDate = request.EndDate;
-    entity.VenueName = request.VenueName.Trim();
-    entity.Address = request.Address.Trim();
-    entity.Latitude = request.Latitude;
-    entity.Longitude = request.Longitude;
-    entity.ImageUrl = request.ImageUrl;
-    entity.IsPublic = request.IsPublic;
-    entity.OrganizerId = request.OrganizerId.Trim();
-    entity.OrganizerName = request.OrganizerName.Trim();
-    entity.AttendeeCount = request.AttendeeCount;
-}
-
-/// <summary>Exposed so the integration tests can drive the same host.</summary>
+/// <summary>Exposed for the integration test suite (WebApplicationFactory).</summary>
 public partial class Program;
+
+
+/// <summary>
+/// Normalises a PostgreSQL connection string for Npgsql.
+/// </summary>
+public static class NpgsqlConnectionString
+{
+    public static string Normalize(string connectionString)
+    {
+        var value = connectionString.Trim();
+
+        if (!value.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) &&
+            !value.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+        {
+            return value;
+        }
+
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri))
+        {
+            return value;
+        }
+
+        var builder = new NpgsqlConnectionStringBuilder
+        {
+            Host = uri.Host,
+            Port = uri.IsDefaultPort ? 5432 : uri.Port,
+            Database = uri.AbsolutePath.Trim('/'),
+            Username = Uri.UnescapeDataString(uri.UserInfo.Split(':')[0]),
+            Password = uri.UserInfo.Contains(':')
+                ? Uri.UnescapeDataString(uri.UserInfo.Split(':')[1])
+                : string.Empty,
+            SslMode = uri.Scheme.Equals("postgresql", StringComparison.OrdinalIgnoreCase)
+                ? SslMode.Require
+                : SslMode.Prefer
+        };
+
+        return builder.ConnectionString;
+    }
+}

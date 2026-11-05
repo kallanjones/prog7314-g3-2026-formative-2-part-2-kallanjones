@@ -17,6 +17,14 @@ captures/
 # Key store files (never commit signing keys)
 *.jks
 *.keystore
+keystore.properties
+
+# Firebase service account keys (private keys — never commit; they belong in
+# the Render environment as Firebase__ServiceAccountJson)
+*-service-account*.json
+*serviceAccount*.json
+firebase-service-account*.json
+eventfinder-south-africa-*.json
 
 # JVM crash logs
 app/hs_err_*.log
@@ -32,9 +40,18 @@ temp_compile.txt
 test.txt
 test_output.txt
 
-# ASP.NET Core API build output
-api/**/bin/
-api/**/obj/
+# .NET build artefacts (EventFinder API)
+**/bin/
+**/obj/
+api/**/data/*.db
+api/**/data/*.db-shm
+api/**/data/*.db-wal
+.env
+
+# Environment files and scratch space (never commit secrets)
+.env
+.env.*
+.tmp/
 
 # Local SQLite database created at runtime
 *.db

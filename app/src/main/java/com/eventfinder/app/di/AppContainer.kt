@@ -1,16 +1,32 @@
 package com.eventfinder.app.di
 
 import android.content.Context
+import com.eventfinder.app.data.cloud.CloudSyncManager
+import com.eventfinder.app.data.cloud.AzureImageUploader
+import com.eventfinder.app.data.cloud.SyncCoordinator
 import com.eventfinder.app.data.local.AppDatabase
 import com.eventfinder.app.data.remote.ApiClient
-import com.eventfinder.app.data.remote.EventFinderApi
 import com.eventfinder.app.data.remote.EventGeocoder
+import com.eventfinder.app.data.remote.CommonsImageSearch
+import com.eventfinder.app.data.remote.EventImageResolver
 import com.eventfinder.app.data.remote.PublicJsonEventClient
+import com.eventfinder.app.data.remote.StockImageSearch
+import com.eventfinder.app.BuildConfig
 import com.eventfinder.app.data.repository.AuthRepository
 import com.eventfinder.app.data.repository.AuthRepositoryImpl
 import com.eventfinder.app.data.repository.EventDiscoveryRepository
 import com.eventfinder.app.data.repository.EventRepository
 import com.eventfinder.app.data.repository.EventRepositoryImpl
+import com.eventfinder.app.data.repository.EventReviewRepository
+import com.eventfinder.app.data.repository.EventReviewRepositoryImpl
+import com.eventfinder.app.data.repository.GroupPlanningRepository
+import com.eventfinder.app.data.repository.GroupPlanningRepositoryImpl
+import com.eventfinder.app.data.repository.ReportRepository
+import com.eventfinder.app.data.repository.ReportRepositoryImpl
+import com.eventfinder.app.data.repository.RouteRepository
+import com.eventfinder.app.data.repository.RouteRepositoryImpl
+import com.eventfinder.app.data.repository.TicketRepository
+import com.eventfinder.app.data.repository.TicketRepositoryImpl
 import com.eventfinder.app.data.repository.OpenStreetMapRepository
 import com.eventfinder.app.data.repository.WeatherRepository
 import com.eventfinder.app.data.repository.WeatherRepositoryImpl
@@ -18,6 +34,10 @@ import com.eventfinder.app.data.sources.SouthAfricaEventSources
 import com.eventfinder.app.data.store.UserPreferences
 import com.eventfinder.app.utils.AppLogger
 import com.eventfinder.app.utils.NetworkMonitor
+import com.eventfinder.app.utils.PlaceResolver
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 /**
  * Simple manual dependency-injection container (service locator).
@@ -30,9 +50,39 @@ class AppContainer(context: Context) {
 
     private val appContext = context.applicationContext
 
+    /** Application-wide coroutine scope for background work (sync, push). */
+    val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     internal val database: AppDatabase by lazy { AppDatabase.build(appContext) }
 
     val preferences: UserPreferences by lazy { UserPreferences(appContext) }
+
+    /** REST backend client (ASP.NET Core on Render; optional at runtime). */
+    val eventFinderApiClient: com.eventfinder.app.data.remote.EventFinderApiClient by lazy {
+        com.eventfinder.app.data.remote.EventFinderApiClient()
+    }
+
+    val cloudSyncManager: CloudSyncManager by lazy {
+        CloudSyncManager(
+            context = appContext,
+            eventDao = database.eventDao(),
+            favoriteDao = database.favoriteDao(),
+            rsvpDao = database.rsvpDao(),
+            preferences = preferences
+        )
+    }
+
+    /**
+     * Blob storage uploader (Azure Blob Storage via the REST API). Replaces the
+     * Firebase Storage uploader, which required the paid Blaze plan.
+     */
+    val imageUploader: AzureImageUploader by lazy {
+        AzureImageUploader(
+            context = appContext,
+            api = eventFinderApiClient,
+            session = preferences
+        )
+    }
 
     val authRepository: AuthRepository by lazy {
         AuthRepositoryImpl(
@@ -40,7 +90,8 @@ class AppContainer(context: Context) {
             userDao = database.userDao(),
             eventDao = database.eventDao(),
             context = appContext,
-            preferences = preferences
+            preferences = preferences,
+            api = eventFinderApiClient
         )
     }
 
@@ -51,11 +102,41 @@ class AppContainer(context: Context) {
             favoriteDao = database.favoriteDao(),
             rsvpDao = database.rsvpDao(),
             preferences = preferences,
-            context = appContext
+            context = appContext,
+            cloudSyncManager = cloudSyncManager,
+            apiClient = eventFinderApiClient
         )
     }
 
+    val eventReviewRepository: com.eventfinder.app.data.repository.EventReviewRepository by lazy {
+        EventReviewRepositoryImpl(
+            reviewDao = database.eventReviewDao(),
+            eventDao = database.eventDao(),
+            rsvpDao = database.rsvpDao(),
+            userDao = database.userDao(),
+            preferences = preferences
+        )
+    }
+
+    val groupPlanningRepository: GroupPlanningRepository by lazy {
+        GroupPlanningRepositoryImpl(database.groupPlanDao())
+    }
+
+    val ticketRepository: TicketRepository by lazy {
+        TicketRepositoryImpl(database.ticketDao())
+    }
+
+    val reportRepository: ReportRepository by lazy {
+        ReportRepositoryImpl(database.reportDao())
+    }
+
+    /** Real road routing (Valhalla → OSRM) with an offline route cache. */
+    val routeRepository: RouteRepository by lazy {
+        RouteRepositoryImpl(httpClient = httpClient, cacheDir = appContext.cacheDir)
+    }
+
     val weatherRepository: WeatherRepository by lazy {
+
         WeatherRepositoryImpl(ApiClient.openMeteoApi(appContext.cacheDir))
     }
 
@@ -77,28 +158,60 @@ class AppContainer(context: Context) {
         )
     }
 
+    /**
+     * Resolves the user's current place (device fix → configured default city →
+     * nation-wide fallback) so the app works from any South African city.
+     */
+    val placeResolver: PlaceResolver by lazy {
+        PlaceResolver(
+            context = appContext,
+            preferences = preferences,
+            geocoder = eventGeocoder
+        )
+    }
+
     private val httpClient by lazy {
         ApiClient.httpClient(appContext.cacheDir)
     }
 
-    /** Our own EventFinder REST API (the ASP.NET Core service in `/api`). */
-    val eventFinderApi: EventFinderApi by lazy {
-        ApiClient.eventFinderApi(appContext.cacheDir)
+    /** Tier 3: authentic, openly licensed South African imagery from Commons. */
+    private val commonsImageSearch by lazy {
+        CommonsImageSearch(httpClient)
+    }
+
+    /** Tiers 4-5: Unsplash then Pixabay stock photos (keys from BuildConfig). */
+    private val stockImageSearch by lazy {
+        StockImageSearch(
+            httpClient = httpClient,
+            unsplashAccessKey = BuildConfig.UNSPLASH_ACCESS_KEY,
+            pixabayKey = BuildConfig.PIXABAY_API_KEY
+        )
+    }
+
+    private val eventImageResolver by lazy {
+        EventImageResolver(httpClient, commonsImageSearch, stockImageSearch)
     }
 
     val eventDiscoveryRepository: EventDiscoveryRepository by lazy {
         EventDiscoveryRepository(
             eventDao = database.eventDao(),
-            sources = SouthAfricaEventSources.create(
-                client = publicJsonEventClient,
-                httpClient = httpClient,
-                eventFinderApi = eventFinderApi
-            ),
-            geocoder = eventGeocoder
+            sources = SouthAfricaEventSources.create(publicJsonEventClient, httpClient),
+            geocoder = eventGeocoder,
+            apiClient = eventFinderApiClient,
+            imageResolver = eventImageResolver
         )
     }
 
     val networkMonitor: NetworkMonitor by lazy { NetworkMonitor(appContext) }
+
+    val syncCoordinator: SyncCoordinator by lazy {
+        SyncCoordinator(
+            networkMonitor = networkMonitor,
+            cloudSyncManager = cloudSyncManager,
+            eventDiscoveryRepository = eventDiscoveryRepository,
+            scope = applicationScope
+        )
+    }
 
     init {
         AppLogger.d("AppContainer", "Dependency graph initialised")

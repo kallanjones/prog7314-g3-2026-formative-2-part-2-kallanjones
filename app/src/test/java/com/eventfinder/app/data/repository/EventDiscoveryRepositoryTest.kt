@@ -50,20 +50,17 @@ class EventDiscoveryRepositoryTest {
 
         override suspend fun count(): Int = rows.size
 
-        override suspend fun countNonUserCreated(): Int =
-            rows.values.count { !it.isCreatedByUser }
-
         override suspend fun countUpcomingSampleEvents(now: Long): Int =
-            rows.values.count {
-                !it.isCreatedByUser && it.id.startsWith("sample-") && it.endDate > now
-            }
+            rows.values.count { !it.isCreatedByUser && it.id.startsWith("sample-") && it.endDate > now }
 
         override suspend fun deleteSampleEvents() {
-            rows.values
-                .filter { !it.isCreatedByUser && it.id.startsWith("sample-") }
+            rows.values.filter { !it.isCreatedByUser && it.id.startsWith("sample-") }
                 .forEach { rows.remove(it.id) }
             emit()
         }
+
+        override suspend fun countNonUserCreated(): Int =
+            rows.values.count { !it.isCreatedByUser }
 
         override suspend fun findNonUserCreatedIds(): List<String> =
             rows.values.filter { !it.isCreatedByUser }.map { it.id }
@@ -72,14 +69,24 @@ class EventDiscoveryRepositoryTest {
             rows.values.filter { !it.isCreatedByUser }
 
         override suspend fun deleteNonUserCreated() {
-            rows.values.filter { !it.isCreatedByUser }.forEach { rows.remove(it.id) }
-            emit()
+            rows.values.filter { !it.isCreatedByUser }.map { it.id }.forEach { rows.remove(it) }
+        }
+
+        override suspend fun deleteStale(cutoff: Long): Int {
+            val stale = rows.values
+                .filter { !it.isCreatedByUser && it.endDate < cutoff }
+                .map { it.id }
+            stale.forEach { rows.remove(it) }
+            return stale.size
         }
 
         override suspend fun deleteCreatedByUser() {
             rows.values.filter { it.isCreatedByUser }.forEach { rows.remove(it.id) }
             emit()
         }
+
+        override suspend fun getUserCreatedEventsForUser(userId: String): List<com.eventfinder.app.data.local.EventEntity> =
+            rows.values.filter { it.isCreatedByUser && it.organizerId == userId }
 
         override suspend fun deleteById(id: String) {
             rows.remove(id)

@@ -4,48 +4,28 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
+    id("com.google.gms.google-services")
 }
 
-/**
- * Where debug builds look for the EventFinder REST API.
- *
- * Resolution order:
- *  1. `api.base.url` in local.properties — machine-specific and gitignored, so
- *     this is the place to put your laptop's LAN IP when testing on a phone.
- *  2. `-PAPI_BASE_URL=...` on the Gradle command line, or gradle.properties.
- *  3. 10.0.2.2, which is the host machine as seen from the Android emulator.
- *
- * Must end with a trailing slash — Retrofit requires it on a base URL.
- */
-val debugApiBaseUrl: String = run {
-    val fromLocalProperties = rootProject.file("local.properties")
-        .takeIf { it.exists() }
-        ?.let { file ->
-            Properties().apply { file.inputStream().use { load(it) } }
-                .getProperty("api.base.url")
-        }
-
-    val configured = fromLocalProperties
-        ?: project.findProperty("API_BASE_URL") as? String
-
-    val resolved = configured?.trim()?.takeIf { it.isNotEmpty() } ?: "http://10.0.2.2:5217/"
-
-    if (resolved.endsWith("/")) resolved else "$resolved/"
+// Release signing is loaded from keystore.properties (gitignored) so the
+// signing secrets never enter version control. Falls back to debug signing
+// when the file is absent (e.g. fresh clone / CI).
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
 }
 
-/**
- * Where release builds look for the API — the deployed instance. Set
- * `API_BASE_URL_RELEASE` in gradle.properties, which is committed so the whole
- * team builds against the same deployment.
- */
-val releaseApiBaseUrl: String = run {
-    val configured = (project.findProperty("API_BASE_URL_RELEASE") as? String)
-        ?.trim()
-        ?.takeIf { it.isNotEmpty() }
-        ?: "https://eventfinder-api.fly.dev/"
-
-    if (configured.endsWith("/")) configured else "$configured/"
+// Local overrides (gitignored): GOOGLE_SERVER_CLIENT_ID, EVENTFINDER_API_URL, …
+// Exposed as project properties so project.findProperty(...) below resolves them.
+val localPropertiesFile = rootProject.file("local.properties")
+val localProperties = Properties().apply {
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { load(it) }
+    }
 }
+localProperties.forEach { (key, value) -> extra[key.toString()] = value }
 
 android {
     namespace = "com.eventfinder.app"
@@ -55,39 +35,91 @@ android {
         applicationId = "com.eventfinder.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 3
+        versionName = "1.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
 
-        // Google OAuth web client ID used for Google sign-in (SSO). Set it in
-        // gradle.properties; when blank the Login screen explains that sign-in
-        // is not configured instead of failing at runtime.
+        // Base URL of the ASP.NET Core backend. Release builds point at the
+        // Render deployment; the debug build type overrides this with the
+        // emulator loopback address so `dotnet run` on the host works.
         buildConfigField(
             "String",
-            "GOOGLE_WEB_CLIENT_ID",
-            "\"${project.findProperty("GOOGLE_WEB_CLIENT_ID") as? String ?: ""}\""
+            "API_BASE_URL",
+            "\"${project.findProperty("EVENTFINDER_API_URL") ?: "https://eventfinder-api-o1t1.onrender.com/"}\""
         )
+        // OAuth web client ID for Credential Manager Google sign-in. This is a
+        // *public* value (it ships in the APK and is listed in the README), so it
+        // is safe as the in-repo default: leaving it blank silently hid the
+        // "Continue with Google" button, because GoogleSignInHelper.isConfigured
+        // is false whenever it is empty. Override via local.properties.
+        // Event-image pipeline tiers 4-5 (priority: organiser cover → og:image
+        // → Wikimedia Commons → Unsplash → Pixabay). Both are public client
+        // keys (the APIs are designed for per-key rate limiting, not secrecy)
+        // and live in the gitignored local.properties so a fresh clone simply
+        // skips those tiers.
+        buildConfigField(
+            "String",
+            "UNSPLASH_ACCESS_KEY",
+            "\"${project.findProperty("UNSPLASH_ACCESS_KEY") ?: ""}\""
+        )
+        buildConfigField(
+            "String",
+            "PIXABAY_API_KEY",
+            "\"${project.findProperty("PIXABAY_API_KEY") ?: ""}\""
+        )
+        buildConfigField(
+            "String",
+            "GOOGLE_SERVER_CLIENT_ID",
+            "\"${project.findProperty("GOOGLE_SERVER_CLIENT_ID") ?: "690167106186-o9bolqrekmkv8bpbfrqd532iqe6r5m3c.apps.googleusercontent.com"}\""
+        )
+    }
+
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
         debug {
-            // Set `api.base.url` in local.properties to point at your laptop's
-            // LAN IP when testing on a physical phone. See debugApiBaseUrl above.
-            buildConfigField("String", "API_BASE_URL", "\"$debugApiBaseUrl\"")
-            // The local API is plain HTTP; release builds stay HTTPS-only.
-            isDebuggable = true
+            // Debug builds now default to the deployed Render API so a fresh
+            // clone authenticates against the real backend. Pointing at a local
+            // `dotnet run` (reached from the emulator via 10.0.2.2) is opt-in:
+            // set EVENTFINDER_API_DEBUG_URL=http://10.0.2.2:5078/ in
+            // local.properties. Without this override the old default timed out
+            // after 20s and AuthRepository silently fell back to an on-device
+            // account instead of ever reaching Firebase.
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                "\"${project.findProperty("EVENTFINDER_API_DEBUG_URL") ?: "https://eventfinder-api-o1t1.onrender.com/"}\""
+            )
         }
         release {
-            // The deployed API. Set API_BASE_URL_RELEASE in gradle.properties.
-            buildConfigField("String", "API_BASE_URL", "\"$releaseApiBaseUrl\"")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.findByName("release")
+                ?: signingConfigs.getByName("debug")
+        }
+        create("staging") {
+            initWith(getByName("release"))
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                "\"${project.findProperty("EVENTFINDER_API_STAGING_URL") ?: "https://eventfinder-api-o1t1.onrender.com/"}\""
+            )
+            matchingFallbacks += listOf("release")
         }
     }
     compileOptions {
@@ -99,7 +131,6 @@ android {
     }
     buildFeatures {
         compose = true
-        // Exposes API_BASE_URL to Kotlin via BuildConfig.
         buildConfig = true
     }
     // Compose compiler 1.5.8 is paired with Kotlin 1.9.22 (see official compatibility map).
@@ -128,6 +159,9 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
+    // Material (M2) is pulled in only for its stable pull-to-refresh API;
+    // Material3 1.2 (BOM 2024.02) does not ship one yet.
+    implementation("androidx.compose.material:material")
 
     // ---- AndroidX core & lifecycle ----
     implementation("androidx.core:core-ktx:1.12.0")
@@ -146,10 +180,11 @@ dependencies {
     // ---- Security SDK: AndroidX Biometric (fingerprint / face unlock) ----
     implementation("androidx.biometric:biometric:1.1.0")
 
-    // ---- Google sign-in (SSO) via Credential Manager ----
-    implementation("androidx.credentials:credentials:1.3.0")
-    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
-    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    // ---- Credential Manager: Google sign-in via a verified ID token ----
+    implementation("androidx.credentials:credentials:1.2.2")
+    implementation("androidx.credentials:credentials-play-services-auth:1.2.2")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.0.1")
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
 
     // FragmentActivity host required by the BiometricPrompt SDK.
     implementation("androidx.fragment:fragment-ktx:1.6.2")
@@ -160,12 +195,31 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    // Task<T>.await() for Firebase Auth / Firestore suspend bridges
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 
     // ---- osmdroid: the free OpenStreetMap SDK (100% royalty-free mapping) ----
     implementation("org.osmdroid:osmdroid-android:6.1.18")
 
     // ---- Image loading ----
     implementation("io.coil-kt:coil-compose:2.6.0")
+
+    // ---- QR ticket rendering (attendee-side, generated fully offline) ----
+    implementation("com.google.zxing:core:3.5.3")
+
+    // ---- WorkManager: periodic background event sync (offline freshness) ----
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+    // ---- Firebase (free Spark plan): Firestore NoSQL, FCM push ----
+    // The API key inside google-services.json is a public app identifier issued
+    // by Google, not a secret. Both services below are free for this scale.
+    // Blob storage is NOT Firebase: event photos live in Azure Blob Storage
+    // and are uploaded through the REST API, so Firebase Storage - which would
+    // require the paid Blaze plan - is not a dependency any more.
+    implementation(platform("com.google.firebase:firebase-bom:32.7.4"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-messaging-ktx")
 
     // ---- Unit testing (run on JVM / GitHub Actions) ----
     testImplementation("junit:junit:4.13.2")
@@ -178,6 +232,9 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.02.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    // ui-test-manifest provides the ComponentActivity used by createComposeRule()
+    // on the instrumented test APK.
+    androidTestImplementation("androidx.compose.ui:ui-test-manifest")
 
     // ---- Compose tooling ----
     debugImplementation("androidx.compose.ui:ui-tooling")

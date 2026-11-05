@@ -1,10 +1,12 @@
-package com.eventfinder.app.ui.screens.create
+﻿package com.eventfinder.app.ui.screens.create
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.FilterChip
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -27,6 +30,7 @@ import androidx.compose.material.icons.outlined.EditCalendar
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -73,6 +77,8 @@ import com.eventfinder.app.di.AppContainer
 import com.eventfinder.app.data.repository.IMAGE_REMOVED
 import com.eventfinder.app.domain.model.EventCategory
 import com.eventfinder.app.ui.components.categoryLabel
+import com.eventfinder.app.ui.components.categoryPngIcon
+import com.eventfinder.app.ui.components.InteractivePngIcon
 import com.eventfinder.app.ui.components.resolve
 import com.eventfinder.app.utils.DateTimeUtils
 import java.util.Calendar
@@ -163,6 +169,7 @@ fun CreateEventScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
@@ -181,19 +188,24 @@ fun CreateEventScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             Row(
-                Modifier.fillMaxWidth().padding(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (state.step > 1) {
                     FilledTonalButton(
                         onClick = viewModel::previousStep,
-                        modifier = Modifier.weight(1f).height(48.dp)
+                        modifier = Modifier.weight(1f).height(54.dp),
+                        shape = RoundedCornerShape(16.dp)
                     ) { Text(stringResource(R.string.back)) }
                 }
                 if (state.step < CREATE_STEPS) {
                     Button(
                         onClick = viewModel::nextStep,
-                        modifier = Modifier.weight(1f).height(48.dp)
+                        modifier = Modifier.weight(1f).height(54.dp),
+                        shape = RoundedCornerShape(16.dp)
                     ) {
                         Text(if (state.step == CREATE_STEPS - 1) stringResource(R.string.preview)
                         else stringResource(R.string.next))
@@ -203,7 +215,8 @@ fun CreateEventScreen(
                     Button(
                         onClick = viewModel::publish,
                         enabled = !state.isSubmitting,
-                        modifier = Modifier.weight(1f).height(48.dp)
+                        modifier = Modifier.weight(1f).height(54.dp),
+                        shape = RoundedCornerShape(16.dp)
                     ) {
                         if (state.isSubmitting) {
                             CircularProgressIndicator(Modifier.height(20.dp).width(20.dp))
@@ -223,18 +236,48 @@ fun CreateEventScreen(
         }
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            LinearProgressIndicator(
-                progress = { state.step / CREATE_STEPS.toFloat() },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Text(
-                getString(R.string.step_pattern, state.step, CREATE_STEPS),
-                style = MaterialTheme.typography.labelMedium,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-            )
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = when (state.step) {
+                            1 -> "Event details"
+                            2 -> "Date and location"
+                            else -> "Review and publish"
+                        },
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Step ${state.step} of $CREATE_STEPS",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    LinearProgressIndicator(
+                        progress = { state.step / CREATE_STEPS.toFloat() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(7.dp)
+                            .clip(RoundedCornerShape(50))
+                    )
+                }
+            }
             Column(
-                Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 18.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 when (state.step) {
                     1 -> StepDetails(viewModel, onPickImage = pickImage)
@@ -325,6 +368,14 @@ private fun StepDetails(viewModel: CreateEventViewModel, onPickImage: () -> Unit
                 selected = state.category == category,
                 onClick = null
             )
+            Spacer(Modifier.width(4.dp))
+            InteractivePngIcon(
+                iconRes = categoryPngIcon(category),
+                contentDescription = null,
+                active = state.category == category,
+                size = 20.dp
+            )
+            Spacer(Modifier.width(10.dp))
             Text(stringResource(categoryLabel(category)))
         }
     }
@@ -390,6 +441,34 @@ private fun StepDateVenue(
             color = MaterialTheme.colorScheme.error,
             style = MaterialTheme.typography.bodySmall
         )
+    }
+
+    // Recurring series: the rule is stored on the event and shown on its detail
+    // page, so an organiser can publish "every week" without re-creating it.
+    Column(Modifier.fillMaxWidth()) {
+        Text(
+            "Repeats",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(4.dp))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.horizontalScroll(rememberScrollState())
+        ) {
+            listOf(
+                null to "One-off",
+                "weekly" to "Weekly",
+                "fortnightly" to "Fortnightly",
+                "monthly" to "Monthly"
+            ).forEach { (rule, label) ->
+                FilterChip(
+                    selected = state.recurrenceRule == rule,
+                    onClick = { viewModel.onRecurrenceChange(rule) },
+                    label = { Text(label) }
+                )
+            }
+        }
     }
     OutlinedTextField(
         value = state.venueName,
@@ -472,3 +551,6 @@ private fun StepReview(state: CreateEventUiState) {
         }
     }
 }
+
+
+

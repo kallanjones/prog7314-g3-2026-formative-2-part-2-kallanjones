@@ -13,7 +13,10 @@ enum class RsvpStatus(val storage: String) {
 }
 
 /** Sorting options exposed on the Home filter sheet. */
-enum class EventSort { DATE, DISTANCE, NAME }
+enum class EventSort { DATE, DISTANCE, NAME, ACCESSIBILITY, TRENDING }
+
+/** Time-window choices in the Filter Events modal (showcase "When?"). */
+enum class TimeWindow { ANYTIME, TODAY, WEEKEND, NEXT_WEEK }
 
 /**
  * Domain model for an event. All events in the local Room catalogue share
@@ -32,20 +35,87 @@ data class Event(
     val latitude: Double?,
     val longitude: Double?,
     val imageUrl: String?,
+    /** Optional source event or ticketing page. */
+    val sourceUrl: String? = null,
+    /** Optional attendance capacity from the source feed. */
+    val maxAttendees: Int? = null,
     /** True = visible in this device's local catalogue only. No cross-device semantics. */
     val isPublic: Boolean,
     val organizerId: String,
     val organizerName: String,
+    val organizerIsVerified: Boolean = false,
     val attendeeCount: Int,
+    /** RSVP tallies from the source feed (0 when the feed has no breakdown). */
+    val maybeCount: Int = 0,
+    val notGoingCount: Int = 0,
     val isFavorite: Boolean,
-    val isCreatedByUser: Boolean
+    val isCreatedByUser: Boolean,
+    /** Accessibility flags for the venue/event. */
+    val wheelchairAccessible: Boolean = false,
+    val loudMusic: Boolean = false,
+    val sensoryFriendly: Boolean = false,
+    val strobeLights: Boolean = false,
+    /** Data provenance: live / cached / imported / sample. */
+    val provenance: String = "live",
+    /** Age-sensitive content warning. */
+    val ageRestricted: Boolean = false,
+    /** Recurring event support. */
+    val isRecurring: Boolean = false,
+    val recurrenceRule: String? = null,
+    val parentEventId: String? = null,
+    /** Event collection grouping. */
+    val collectionId: String? = null,
+    /** Conflict resolution: version + last-updated for last-write-wins merge. */
+    val version: Int = 1,
+    val updatedAt: Long = 0L
 )
 
 /** Event combined with the viewing user's context (distance + RSVP state). */
 data class EventView(
     val event: Event,
     val distanceKm: Double? = null,
-    val rsvpStatus: RsvpStatus? = null
+    val rsvpStatus: RsvpStatus? = null,
+    /** Filled in by the presentation layer from the per-user favourites table. */
+    val isFavorite: Boolean = false,
+    /** Optional event rating already rendered in Card views. */
+    val averageRating: Double? = null,
+    val reviewCount: Int = 0
+)
+
+/** A verified attendee review / star rating attached to an event. */
+data class EventReview(
+    val eventId: String,
+    val userId: String,
+    val authorName: String,
+    val rating: Int,
+    val comment: String,
+    val createdAt: Long,
+    val verifiedAttendance: Boolean = false,
+    /** Optional photo URLs attached to the review. */
+    val photoUrls: List<String> = emptyList()
+)
+
+/** A coordinated group plan for attending a specific event. */
+data class GroupPlan(
+    val id: String,
+    val eventId: String,
+    val creatorId: String,
+    val members: Set<String>,
+    val meetingPointLabel: String? = null,
+    val meetingLat: Double? = null,
+    val meetingLng: Double? = null,
+    val proposedTime: Long? = null,
+    val createdAt: Long
+)
+
+/** A digital ticket for an event attendee. */
+data class EventTicket(
+    val id: String,
+    val eventId: String,
+    val userId: String,
+    val ticketCode: String,
+    val issuedAt: Long,
+    val checkedInAt: Long? = null
 )
 
 /** Registered EventFinder user. */
@@ -57,5 +127,15 @@ data class User(
     val defaultCity: String,
     val defaultRadiusKm: Int,
     val biometricEnabled: Boolean,
-    val createdAt: Long
+    val createdAt: Long,
+    val avatarType: String = "initials",
+    val avatarUrl: String? = null,
+    val avatarImageUrl: String? = null,
+    val isVerified: Boolean = false,
+    val trustScore: Double = 0.0,
+    /** Personalization + accessibility preferences. */
+    val commuteTimeMinutes: Int = 30,
+    val preferredCategories: String = "",
+    val skipReminders: Boolean = false,
+    val accessibilityNeeds: String = ""
 )

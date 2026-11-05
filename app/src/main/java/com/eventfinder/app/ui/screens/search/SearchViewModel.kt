@@ -22,8 +22,13 @@ import kotlinx.coroutines.launch
 data class SearchUiState(
     val query: String = "",
     val results: List<EventView> = emptyList(),
-    val recentSearches: List<String> = emptyList()
-)
+    val recentSearches: List<String> = emptyList(),
+    val savedSearches: List<String> = emptyList()
+) {
+    /** True when the current query is already pinned, so the chip can show "Saved". */
+    val queryIsSaved: Boolean
+        get() = query.isNotBlank() && savedSearches.any { it.equals(query.trim(), ignoreCase = true) }
+}
 
 /**
  * Search (Screen 7): debounced live search across the local catalogue plus
@@ -37,12 +42,18 @@ class SearchViewModel(
 
     private val queryFlow = MutableStateFlow("")
 
+    private val searchMemory = combine(
+        preferences.recentSearches,
+        preferences.savedSearches
+    ) { recents, saved -> recents to saved }
+
     val uiState = combine(
         eventRepository.observeAllEvents(),
         queryFlow,
         queryFlow.debounce(250),
-        preferences.recentSearches
-    ) { events, immediateQuery, searchQuery, recents ->
+        searchMemory,
+        eventRepository.observeFavoriteIds()
+    ) { events, immediateQuery, searchQuery, memory, favoriteIds ->
         val trimmed = searchQuery.trim()
         val now = System.currentTimeMillis()
         val futureEvents = events.filter { it.endDate > now }
@@ -58,8 +69,9 @@ class SearchViewModel(
         SearchUiState(
             // Display the exact text the user typed; the debounced copy drives results.
             query = immediateQuery,
-            results = EventFilterer.attachDistances(sorted, null, null),
-            recentSearches = recents
+            results = EventFilterer.attachDistances(sorted, null, null, favoriteIds),
+            recentSearches = memory.first,
+            savedSearches = memory.second
         )
     }.stateIn(
         scope = viewModelScope,
@@ -85,6 +97,24 @@ class SearchViewModel(
 
     fun clearHistory() {
         viewModelScope.launch { preferences.clearRecentSearches() }
+    }
+
+    /** Pins the current query so it survives history clears and app restarts. */
+    fun saveCurrentSearch() {
+        val term = queryFlow.value
+        if (term.isNotBlank()) {
+            viewModelScope.launch { preferences.saveSearch(term) }
+        }
+    }
+
+    fun removeSavedSearch(term: String) {
+        viewModelScope.launch { preferences.removeSavedSearch(term) }
+    }
+
+    /** Tapping a saved search re-runs it and re-timestamps it in recent history. */
+    fun applySavedSearch(term: String) {
+        queryFlow.value = term
+        viewModelScope.launch { preferences.addRecentSearch(term) }
     }
 
     companion object {

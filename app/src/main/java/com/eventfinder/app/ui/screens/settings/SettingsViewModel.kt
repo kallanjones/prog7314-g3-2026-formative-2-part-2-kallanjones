@@ -28,7 +28,19 @@ data class SettingsUiState(
     val language: SupportedLanguage = SupportedLanguage.ENGLISH,
     val biometricEnabled: Boolean = false,
     val remindersEnabled: Boolean = true,
-    val newEventsAlerts: Boolean = true
+    val newEventsAlerts: Boolean = true,
+    val defaultCity: String = "",
+    val defaultRadiusKm: Int = 50,
+    val analyticsConsent: Boolean = false,
+    val locationConsent: Boolean = false,
+    val wheelchairNeeded: Boolean = false,
+    val lowSensoryNeeded: Boolean = false,
+    val reducedMotion: Boolean = false,
+    val highContrast: Boolean = false,
+    val loudNoiseNeeded: Boolean = false,
+    val noMusicNeeded: Boolean = false,
+    val notificationConsent: Boolean = true,
+    val dynamicColor: Boolean = false
 )
 
 /**
@@ -40,19 +52,64 @@ class SettingsViewModel(
     private val authRepository: AuthRepository,
     private val eventRepository: EventRepository,
     private val context: Context,
-    private val eventDao: EventDao
+    private val eventDao: EventDao,
+    private val ticketRepository: com.eventfinder.app.data.repository.TicketRepository? = null
 ) : ViewModel() {
 
     private val _messages = MutableSharedFlow<UiMessage>()
     val messages = _messages.asSharedFlow()
 
+    val consentFlow = kotlinx.coroutines.flow.combine(
+        preferences.analyticsConsent,
+        preferences.locationConsent,
+        preferences.notificationConsent
+    ) { analytics, location, notifications -> listOf(analytics, location, notifications) }
+
+    val a11yFlow = kotlinx.coroutines.flow.combine(
+        preferences.wheelchairNeeded,
+        preferences.lowSensoryNeeded,
+        preferences.reducedMotion,
+        preferences.highContrast,
+        preferences.loudNoiseNeeded
+    ) { w, l, r, h, loud -> listOf(w, l, r, h, loud) }
+
     val uiState = kotlinx.coroutines.flow.combine(
-        preferences.language.map { SupportedLanguage.fromCode(it) },
-        authRepository.currentUser.map { it?.biometricEnabled ?: false },
-        preferences.remindersEnabled,
-        preferences.newEventAlertsEnabled
-    ) { lang, bio, rem, alerts ->
-        SettingsUiState(lang, bio, rem, alerts)
+        kotlinx.coroutines.flow.combine(
+            preferences.language.map { SupportedLanguage.fromCode(it) },
+            authRepository.currentUser.map { it?.biometricEnabled ?: false },
+            preferences.remindersEnabled,
+            preferences.newEventAlertsEnabled
+        ) { lang, bio, rem, alerts ->
+            listOf(lang, bio, rem, alerts)
+        },
+        preferences.defaultCity,
+        preferences.defaultRadiusKm,
+        consentFlow,
+        kotlinx.coroutines.flow.combine(
+            a11yFlow,
+            preferences.noMusicNeeded,
+            preferences.dynamicColorEnabled
+        ) { a11y, noMusic, dynamic -> listOf(a11y, noMusic, dynamic) }
+    ) { base, city, radius, consent, extra ->
+        @Suppress("UNCHECKED_CAST")
+        SettingsUiState(
+            language = base[0] as SupportedLanguage,
+            biometricEnabled = base[1] as Boolean,
+            remindersEnabled = base[2] as Boolean,
+            newEventsAlerts = base[3] as Boolean,
+            defaultCity = city,
+            defaultRadiusKm = radius,
+            analyticsConsent = consent[0] as Boolean,
+            locationConsent = consent[1] as Boolean,
+            notificationConsent = consent[2] as Boolean,
+            wheelchairNeeded = (extra[0] as List<Boolean>)[0],
+            lowSensoryNeeded = (extra[0] as List<Boolean>)[1],
+            reducedMotion = (extra[0] as List<Boolean>)[2],
+            highContrast = (extra[0] as List<Boolean>)[3],
+            loudNoiseNeeded = (extra[0] as List<Boolean>)[4],
+            noMusicNeeded = extra[1] as Boolean,
+            dynamicColor = extra[2] as Boolean
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -89,6 +146,128 @@ class SettingsViewModel(
         viewModelScope.launch { preferences.setNewEventAlertsEnabled(enabled) }
     }
 
+    fun setAnalyticsConsent(enabled: Boolean) {
+        viewModelScope.launch { preferences.setAnalyticsConsent(enabled) }
+    }
+
+    fun setLocationConsent(enabled: Boolean) {
+        viewModelScope.launch { preferences.setLocationConsent(enabled) }
+    }
+
+    fun setWheelchairNeeded(enabled: Boolean) {
+        viewModelScope.launch { preferences.setWheelchairNeeded(enabled) }
+    }
+
+    fun setLowSensoryNeeded(enabled: Boolean) {
+        viewModelScope.launch { preferences.setLowSensoryNeeded(enabled) }
+    }
+
+    fun setReducedMotion(enabled: Boolean) {
+        viewModelScope.launch { preferences.setReducedMotion(enabled) }
+    }
+
+    fun setHighContrast(enabled: Boolean) {
+        viewModelScope.launch { preferences.setHighContrast(enabled) }
+    }
+
+    fun setLoudNoiseNeeded(enabled: Boolean) {
+        viewModelScope.launch { preferences.setLoudNoiseNeeded(enabled) }
+    }
+
+    fun setNoMusicNeeded(enabled: Boolean) {
+        viewModelScope.launch { preferences.setNoMusicNeeded(enabled) }
+    }
+
+    fun setNotificationConsent(enabled: Boolean) {
+        viewModelScope.launch { preferences.setNotificationConsent(enabled) }
+    }
+
+    fun setDynamicColor(enabled: Boolean) {
+        viewModelScope.launch { preferences.setDynamicColorEnabled(enabled) }
+    }
+
+    private val _exportPath = kotlinx.coroutines.flow.MutableSharedFlow<String>()
+    val exportPath = _exportPath.asSharedFlow()
+
+    /**
+     * POPIA/GDPR data export: the user's profile, favourites, RSVPs, tickets and
+     * collections, not just the public event catalogue. Built with Gson so the
+     * escaping is correct for any name or ticket code.
+     */
+    fun exportData() {
+        viewModelScope.launch {
+            try {
+                val userId = preferences.sessionUserId.first()
+                val user = authRepository.currentUser.first()
+                val events = eventRepository.observeAllEvents().first()
+                val favouriteIds = eventRepository.observeFavoriteIds().first()
+                val rsvps = eventRepository.observeRsvpStatuses().first()
+                val tickets = userId?.let { ticketRepository?.observeTicketsForUser(it)?.first() }
+                    .orEmpty()
+                val collections = preferences.eventCollections.first()
+
+                val root = com.google.gson.JsonObject().apply {
+                    addProperty("exportedAt", System.currentTimeMillis())
+                    add("profile", com.google.gson.JsonObject().apply {
+                        addProperty("userId", userId ?: "")
+                        addProperty("fullName", user?.fullName ?: "")
+                        addProperty("email", user?.email ?: "")
+                        addProperty("avatarType", user?.avatarType ?: "")
+                        addProperty("memberSince", user?.createdAt ?: 0L)
+                    })
+                    add("favourites", com.google.gson.JsonArray().apply {
+                        favouriteIds.forEach { add(it) }
+                    })
+                    add("rsvps", com.google.gson.JsonObject().apply {
+                        rsvps.forEach { (eventId, status) -> addProperty(eventId, status.name) }
+                    })
+                    add("tickets", com.google.gson.JsonArray().apply {
+                        tickets.forEach { ticket ->
+                            add(com.google.gson.JsonObject().apply {
+                                addProperty("eventId", ticket.eventId)
+                                addProperty("ticketCode", ticket.ticketCode)
+                                addProperty("issuedAt", ticket.issuedAt)
+                                addProperty("checkedInAt", ticket.checkedInAt)
+                            })
+                        }
+                    })
+                    add("collections", com.google.gson.JsonArray().apply {
+                        collections.forEach { collection ->
+                            add(com.google.gson.JsonObject().apply {
+                                addProperty("name", collection.name)
+                                addProperty("category", collection.categoryKey ?: "all")
+                            })
+                        }
+                    })
+                    add("events", com.google.gson.JsonArray().apply {
+                        events.forEach { event ->
+                            add(com.google.gson.JsonObject().apply {
+                                addProperty("id", event.id)
+                                addProperty("title", event.title)
+                                addProperty("category", event.category.name)
+                            })
+                        }
+                    })
+                }
+
+                val file = java.io.File(context.cacheDir, "eventfinder_export.json")
+                file.writeText(root.toString())
+                _exportPath.emit(file.absolutePath)
+                _messages.emit(com.eventfinder.app.ui.components.UiMessage.Literal("Data exported"))
+            } catch (e: Exception) {
+                _messages.emit(com.eventfinder.app.ui.components.UiMessage.Literal("Export failed"))
+            }
+        }
+    }
+
+    fun setDefaultCity(city: String) {
+        viewModelScope.launch { preferences.setDefaultCity(city) }
+    }
+
+    fun setDefaultRadiusKm(km: Int) {
+        viewModelScope.launch { preferences.setDefaultRadiusKm(km.coerceIn(5, 200)) }
+    }
+
     /** Verifies the current password, then stores the new PBKDF2 hash (FR-01). */
     fun changePassword(current: String, newPassword: String, confirm: String) {
         viewModelScope.launch {
@@ -118,8 +297,31 @@ class SettingsViewModel(
     /** Wipes the local event cache and reseeds the curated sample set. */
     fun clearCache() {
         viewModelScope.launch {
-            eventRepository.clearLocalCache()
-            _messages.emit(UiMessage.Resource(R.string.cache_cleared))
+            val blockedBy = eventRepository.clearLocalCache()
+            _messages.emit(
+                if (blockedBy > 0) {
+                    UiMessage.Resource(R.string.cache_clear_blocked, listOf(blockedBy))
+                } else {
+                    UiMessage.Resource(R.string.cache_cleared)
+                }
+            )
+        }
+    }
+
+    /**
+     * Admin "Repair local data" action: rebuilds the local event cache by
+     * reseeding the curated demo catalogue (idempotent — only missing rows are
+     * restored) so a corrupted or partial Room cache recovers without a wipe.
+     */
+    fun repairLocalData() {
+        viewModelScope.launch {
+            runCatching { eventRepository.ensureSeeded() }
+                .onSuccess {
+                    _messages.emit(UiMessage.Resource(R.string.local_data_repaired))
+                }
+                .onFailure {
+                    _messages.emit(UiMessage.Resource(R.string.local_data_repair_failed))
+                }
         }
     }
 
@@ -148,7 +350,8 @@ class SettingsViewModel(
                     container.authRepository,
                     container.eventRepository,
                     appContext,
-                    container.database.eventDao()
+                    container.database.eventDao(),
+                    container.ticketRepository
                 )
             }
         }

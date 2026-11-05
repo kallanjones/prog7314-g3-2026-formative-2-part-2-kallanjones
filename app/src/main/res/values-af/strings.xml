@@ -71,12 +71,32 @@
     <string name="discover_events">Ontdek Gebeurtenisse</string>
     <string name="search_placeholder">Soek gebeurtenisse…</string>
     <string name="all_categories">Alles</string>
+    <string name="cat_other">Ander</string>
+    <string name="get_tickets">Kry Kaartjies</string>
     <string name="cat_music">Musiek</string>
     <string name="cat_sports">Sport</string>
     <string name="cat_food">Kos</string>
     <string name="cat_community">Gemeenskap</string>
     <string name="cat_arts">Kuns</string>
     <string name="cat_business">Besigheid</string>
+    <string name="cat_concerts">Konserte</string>
+    <string name="cat_festivals">Festiwale</string>
+    <string name="cat_nightlife">Nagtlewe</string>
+    <string name="cat_comedy">Komedi</string>
+    <string name="cat_networking">Netwerkbou</string>
+    <string name="cat_technology">Tegnologie</string>
+    <string name="cat_education">Onderwys</string>
+    <string name="cat_family">Familie</string>
+    <string name="cat_markets">Markte</string>
+    <string name="cat_outdoors">Buitelug</string>
+    <string name="cat_travel">Reis</string>
+    <string name="cat_charity">Welsyn</string>
+    <string name="cat_theatre">Teater</string>
+    <string name="cat_movies">Flieks</string>
+    <string name="cat_fashion">Mode</string>
+    <string name="cat_cars">Motors</string>
+    <string name="cat_wellness">Welstand</string>
+    <string name="cat_religion">Godsdiens</string>
     <string name="map_view">Kaart</string>
     <string name="list_view">Lys</string>
     <string name="no_events">Geen gebeurtenisse gevind nie</string>
@@ -108,6 +128,7 @@
     <string name="attending">Woon by</string>
     <string name="share">Deel</string>
     <string name="directions">Kry Rigtings</string>
+    <string name="directions_unavailable">Geen toepassing gevind om rigtings te open nie</string>
     <string name="weather_at_venue">Weer by lokaal</string>
     <string name="weather_unavailable">Weervoorspelling nie beskikbaar nie</string>
     <string name="distance_away">weg</string>
@@ -134,6 +155,12 @@
 
     <!-- Create event -->
     <string name="create_event_title">Skep Gebeurtenis</string>
+  <string name="create_short">Skep</string>
+  <string name="location_use_gps">Gebruik my ligging</string>
+  <string name="repair_local_data">Herstel plaaslike data</string>
+  <string name="repair_local_data_hint">Herstel ontbrekende plaaslike gebeurtenisdata</string>
+  <string name="local_data_repaired">Plaaslike data herstel</string>
+  <string name="local_data_repair_failed">Kon plaaslike data nie herstel nie</string>
     <string name="step_x_of_y">Stap %1$d van %2$d</string>
     <string name="event_title">Gebeurtenistitel</string>
     <string name="event_description">Beskrywing</string>
@@ -217,6 +244,7 @@
     <string name="data_management">Data</string>
     <string name="clear_cache">Vee plaaslike kas uit</string>
     <string name="cache_cleared">Kas uitgevee</string>
+    <string name="cache_clear_blocked">Kas nie uitgevee nie — jy het %1$d aktiewe RSVP(s). Sien hulle eers af.</string>
     <string name="about">Oor</string>
     <string name="app_version">Weergawe %1$s</string>
     <string name="privacy_policy">Privaatheidsbeleid</string>
@@ -273,5 +301,98 @@
     <string name="event_reminders">Gebeurtenisherinnerings</string>
     <string name="event_reminders_hint">Laat my 24 uur en 1 uur voor \'n gebeurtenis wat ek bywoon weet</string>
     <string name="new_events_alerts">Nuwe gebeurteniswaarskuwings</string>
-    <string name="settings_about">%1$s-prototipe — geleenthede vanaf die EventFinder REST API, plus gratis openbare bronne (Ardent Africa, Open-Meteo, OpenStreetMap).</string>
+    <string name="settings_about">%1$s-prototipe — gebou met gratis API\'s (Ardent Africa, Open-Meteo, OpenStreetMap).</string>
+
+  <!-- Backend password reset (two-step, email-verified) -->
+  <string name="reset_send_token_hint">Sleutel jou e-pos in en ons stuur \'n eenmalige herstelkode.</string>
+  <string name="reset_enter_token_hint">Voer die kode uit die herstel-e-pos in saam met \'n nuwe wagwoord.</string>
+  <string name="reset_token_label">Herstelkode</string>
+  <string name="reset_send_token_action">Stuur kode</string>
+  <string name="reset_email_sent">As daar \'n rekening vir daardie e-pos bestaan, is \'n herstelkode gestuur.</string>
+  <string name="invalid_token">Daardie herstelkode is ongeldig of het verstryk.</string>
+
+  <!-- Google sign-in -->
+  <string name="google_sign_in_failed">Google-aanmelding het misluk. Probeer asseblief weer.</string>
+
+  <!-- Discovery defaults (Settings) -->
+  <string name="discovery_settings">Ontdekkingsinstellings</string>
+  <string name="default_city">Verstek stad</string>
+  <string name="default_city_hint">bv. Johannesburg — gebruik wanneer ligging af is</string>
+  <string name="default_radius">Soekradius</string>
+  <string name="radius_km_value">%d km</string>
+  <!-- Avatar / profile photo -->
+  <string name="avatar_content_description">Profielavatar</string>
+  <string name="edit_avatar">Wysig avatar</string>
+  <string name="avatar_style_default">Verstek</string>
+  <string name="avatar_style_male">Manlik</string>
+  <string name="avatar_style_female">Vroulik</string>
+  <string name="photo_import_failed">Kon die foto nie lees nie. Kies asseblief ’n ander een.</string>
+  <string name="email_verification_token">E-pos verifiëringstoken</string>
+  <string name="verify_email_change">Verifieer wysiging</string>
+  <string name="avatar_desc_photo">Profielfoto</string>
+  <string name="avatar_desc_male">Profielavatar, manlik</string>
+  <string name="avatar_desc_female">Profielavatar, vroulik</string>
+  <string name="avatar_desc_initials">Profielavatar, initialle</string>
+  <!-- Ratings & reviews -->
+  <string name="reviews_title">Graderings en resensies</string>
+  <string name="write_review">Skryf ’n resensie</string>
+  <string name="no_reviews">Nog geen resensies nie — wees die eerste.</string>
+  <string name="reviews_count">%1$d resensies</string>
+  <string name="verified_attendee">Geverifieerde bywoner</string>
+  <string name="delete_review">Deleteer resensie</string>
+  <string name="submit_review">Dien in</string>
+  <string name="review_comment_hint">Wat het jy gedink? (opsioneel)</string>
+  <string name="rate_stars">Gradeer %1$d sterre</string>
+  <string name="review_saved">Resensie gestoor</string>
+  <string name="review_deleted">Resensie verwyder</string>
+  <string name="review_failed">Kon die resensie nie stoor nie. Probeer weer.</string>
+  <string name="close">Maak toe</string>
+  <string name="my_ticket_title">My kaartjie</string>
+  <string name="my_tickets">My kaartjies</string>
+  <string name="ticket_ready">Kaartjie gereed</string>
+  <string name="ticket_show_at_gate">Wys hierdie QR-kode by die hek</string>
+  <string name="ticket_checked_in">Ingecheck</string>
+  <string name="ticket_qr_desc">QR-kode vir kaartjie %1$s</string>
+  <string name="recurring_event">Herhalend</string>
+  <string name="reviews_filtered_empty">Geen resensies pas hierdie filter nie</string>
+  <string name="no_tickets_yet">Nog geen kaartjies nie - RSVP by \'n kry joune</string>
+  <string name="background_sync">Agtergrond-sinchronisering</string>
+  <string name="background_sync_desc">Vernuwe gebeurtenisse outomaties wyl die toep toe is</string>
+  <string name="draft_restored">Konsep herstel - voltooi of verwerp dit</string>
+  <string name="discard_draft">Verwerp konsep</string>
+  <string name="review_verified">Geverifieerde bywoner</string>
+  <string name="review_photo">Resensiefoto</string>
+  <string name="ticket_ready_for">Jou kaartjie vir %1$s is gereed</string>
+
+  <!-- Organizer profile -->
+  <string name="organizer_profile_title">Organisateursprofiel</string>
+  <string name="verified_organizer">Geverifieerde organiseerder</string>
+  <string name="upcoming_events">Kommende geleenthede</string>
+  <string name="report_organizer">Rapporteer organiseerder</string>
+  <string name="report_submitted">Rapport ingedien</string>
+  <string name="host_line">Gastheer van %1$d geleenthede regoor Suid-Afrika.</string>
+  <string name="contact">Kontak</string>
+  <string name="organizer_events_label">Geleenthede</string>
+  <string name="organizer_rating_label">Gradering</string>
+  <string name="view_profile">Beskou profiel</string>
+  <string name="share_with_friends">Deel met vriende!</string>
+  <string name="link_copied">Skakel gekopieer</string>
+  <string name="getting_tickets">Kry tans kaartjies…</string>
+  <string name="report_sent">Verslag ingedien</string>
+  <string name="reporting">Stuur tans verslag…</string>
+  <string name="route_cached">Gekasde roete</string>
+  <string name="route_calculating">Bereken tans roete…</string>
+  <string name="route_close">Sluit roete</string>
+  <string name="route_location_needed">Skakel ligging aan om \'n roete te bereken</string>
+  <string name="route_mode_cycle">Fietsry</string>
+  <string name="route_mode_drive">Ry</string>
+  <string name="route_mode_walk">Stap</string>
+  <string name="route_option">Roete %1$d</string>
+  <string name="route_recenter">Herpositioneer roete</string>
+  <string name="route_show">Wys roete</string>
+  <string name="route_start_navigation">Begin navigasie</string>
+  <string name="route_unavailable">Roete nie beskikbaar nie</string>
+  <string name="share_event">Deel geleentheid</string>
+  <string name="tickets_added">Kaartjies bygevoeg!</string>
+  <string name="try_again">Probeer weer</string>
 </resources>

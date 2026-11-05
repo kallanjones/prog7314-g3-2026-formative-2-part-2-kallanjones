@@ -1,6 +1,30 @@
-package com.eventfinder.app.ui.navigation
+﻿package com.eventfinder.app.ui.navigation
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.AddCircle
+import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -36,6 +60,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.eventfinder.app.R
 import com.eventfinder.app.di.AppContainer
+import com.eventfinder.app.ui.components.CreatePngButton
 import kotlinx.coroutines.flow.MutableStateFlow
 import com.eventfinder.app.ui.screens.auth.LoginScreen
 import com.eventfinder.app.ui.screens.auth.RegisterScreen
@@ -43,9 +68,25 @@ import com.eventfinder.app.ui.screens.create.CreateEventScreen
 import com.eventfinder.app.ui.screens.detail.EventDetailScreen
 import com.eventfinder.app.ui.screens.editprofile.EditProfileScreen
 import com.eventfinder.app.ui.screens.favorites.FavoritesScreen
+import com.eventfinder.app.ui.screens.groups.GroupPlanningScreen
+import com.eventfinder.app.ui.screens.organizer.OrganizerProfileScreen
 import com.eventfinder.app.ui.screens.home.HomeScreen
+import com.eventfinder.app.ui.screens.tickets.TicketScannerScreen
 import com.eventfinder.app.ui.screens.profile.ProfileScreen
 import com.eventfinder.app.ui.screens.search.SearchScreen
+import com.eventfinder.app.ui.screens.collections.CollectionsScreen
+import com.eventfinder.app.ui.screens.settings.BlockedUsersScreen
+import com.eventfinder.app.ui.screens.tickets.MyTicketsScreen
+import com.eventfinder.app.ui.screens.preferences.AccessibilityProfileScreen
+import com.eventfinder.app.ui.screens.preferences.AccessibilityScreen
+import com.eventfinder.app.ui.screens.preferences.CommutePreferencesScreen
+import com.eventfinder.app.ui.screens.preferences.InterestsScreen
+import com.eventfinder.app.ui.screens.preferences.LoudNoiseScreen
+import com.eventfinder.app.ui.screens.preferences.NoMusicScreen
+import com.eventfinder.app.ui.screens.preferences.SensoryPreferencesScreen
+import com.eventfinder.app.ui.screens.preferences.WheelchairAccessibilityScreen
+import com.eventfinder.app.ui.screens.safety.ModerationScreen
+import com.eventfinder.app.ui.screens.safety.ReportScamScreen
 import com.eventfinder.app.ui.screens.settings.SettingsScreen
 import com.eventfinder.app.ui.screens.splash.SplashScreen
 
@@ -59,10 +100,31 @@ object AppDestinations {
     const val EDIT_PROFILE = "editProfile"
     const val EVENT_DETAIL = "event/{eventId}"
     const val EDIT_EVENT = "editEvent/{eventId}"
+    const val GROUP_PLANNING = "groupPlanning/{eventId}"
+    const val TICKET_SCANNER = "ticketScanner/{eventId}"
+    const val ORGANIZER_PROFILE = "organizerProfile/{organizerId}"
+
+    // 2026 feature set
+    const val REPORT_SCAM = "reportScam/{targetId}"
+    const val MODERATION = "moderation"
+    const val ACCESSIBILITY = "accessibility"
+    const val ACCESSIBILITY_PROFILE = "accessibilityProfile"
+    const val ACCESSIBILITY_WHEELCHAIR = "accessibility/wheelchair"
+    const val ACCESSIBILITY_NOISE = "accessibility/noise"
+    const val ACCESSIBILITY_NO_MUSIC = "accessibility/noMusic"
+    const val ACCESSIBILITY_SENSORY = "accessibility/sensory"
+    const val COMMUTE = "commute"
+    const val INTERESTS = "interests"
+    const val MY_TICKETS = "myTickets"
+    const val COLLECTIONS = "collections"
+    const val BLOCKED_USERS = "blockedUsers"
 
     fun eventDetail(eventId: String) = "event/$eventId"
-
     fun editEvent(eventId: String) = "editEvent/$eventId"
+    fun groupPlanning(eventId: String) = "groupPlanning/$eventId"
+    fun ticketScanner(eventId: String) = "ticketScanner/$eventId"
+    fun organizerProfile(organizerId: String) = "organizerProfile/$organizerId"
+    fun reportScam(targetId: String) = "reportScam/$targetId"
 }
 
 /**
@@ -103,11 +165,14 @@ fun EventFinderNavHost(
     NavHost(navController = navController, startDestination = AppDestinations.SPLASH) {
 
         composable(AppDestinations.SPLASH) {
-            SplashScreen(onFinished = { loggedIn ->
+            SplashScreen(
+                container = container,
+                onFinished = { loggedIn ->
                 navController.navigate(if (loggedIn) AppDestinations.MAIN else AppDestinations.LOGIN) {
                     popUpTo(AppDestinations.SPLASH) { inclusive = true }
                 }
-            })
+            }
+            )
         }
 
         composable(AppDestinations.LOGIN) {
@@ -150,17 +215,34 @@ fun EventFinderNavHost(
             MainScreen(container = container, navController = navController)
         }
 
-        composable(
-            route = AppDestinations.EVENT_DETAIL,
-            arguments = listOf(navArgument("eventId") { type = NavType.StringType })
-        ) { entry ->
-            EventDetailScreen(
-                container = container,
-                eventId = entry.arguments?.getString("eventId").orEmpty(),
-                onBack = { navController.popBackStack() },
-                onEditEvent = { navController.navigate(AppDestinations.editEvent(it)) }
-            )
-        }
+                        composable(
+                            route = AppDestinations.EVENT_DETAIL,
+                            arguments = listOf(navArgument("eventId") { type = NavType.StringType })
+                        ) { entry ->
+                            EventDetailScreen(
+                                container = container,
+                                eventId = entry.arguments?.getString("eventId").orEmpty(),
+                                onBack = { navController.popBackStack() },
+                                onEditEvent = { navController.navigate(AppDestinations.editEvent(it)) },
+                                onPlanWithFriends = { navController.navigate(AppDestinations.groupPlanning(it)) },
+                                onOpenScanner = { navController.navigate(AppDestinations.ticketScanner(it)) },
+                                onOrganizerClick = { navController.navigate(AppDestinations.organizerProfile(it)) },
+                                onReportEvent = { navController.navigate(AppDestinations.reportScam(it)) },
+                                onOpenEvent = { navController.navigate(AppDestinations.eventDetail(it)) }
+                            )
+                        }
+
+                        composable(
+                            route = AppDestinations.ORGANIZER_PROFILE,
+                            arguments = listOf(navArgument("organizerId") { type = NavType.StringType })
+                        ) { entry ->
+                            OrganizerProfileScreen(
+                                container = container,
+                                organizerId = entry.arguments?.getString("organizerId").orEmpty(),
+                                onBack = { navController.popBackStack() },
+                                onEventClick = { navController.navigate(AppDestinations.eventDetail(it)) }
+                            )
+                        }
 
         composable(
             route = AppDestinations.EDIT_EVENT,
@@ -177,6 +259,14 @@ fun EventFinderNavHost(
             SettingsScreen(
                 container = container,
                 onBack = { navController.popBackStack() },
+                onOpenAccessibility = { navController.navigate(AppDestinations.ACCESSIBILITY) },
+                onOpenAccessibilityProfile = { navController.navigate(AppDestinations.ACCESSIBILITY_PROFILE) },
+                onOpenCommute = { navController.navigate(AppDestinations.COMMUTE) },
+                onOpenInterests = { navController.navigate(AppDestinations.INTERESTS) },
+                onOpenModeration = { navController.navigate(AppDestinations.MODERATION) },
+                onOpenReportScam = { navController.navigate(AppDestinations.reportScam("general")) },
+                onOpenCollections = { navController.navigate(AppDestinations.COLLECTIONS) },
+                onOpenBlockedUsers = { navController.navigate(AppDestinations.BLOCKED_USERS) },
                 onLoggedOut = {
                     navController.navigate(AppDestinations.LOGIN) {
                         popUpTo(0) { inclusive = true }
@@ -185,23 +275,154 @@ fun EventFinderNavHost(
             )
         }
 
-        composable(AppDestinations.EDIT_PROFILE) {
-            EditProfileScreen(container = container, onBack = { navController.popBackStack() })
+        composable(AppDestinations.ACCESSIBILITY) {
+            AccessibilityScreen(
+                container = container,
+                onBack = { navController.popBackStack() },
+                onOpenWheelchair = { navController.navigate(AppDestinations.ACCESSIBILITY_WHEELCHAIR) },
+                onOpenLoudNoise = { navController.navigate(AppDestinations.ACCESSIBILITY_NOISE) },
+                onOpenNoMusic = { navController.navigate(AppDestinations.ACCESSIBILITY_NO_MUSIC) },
+                onOpenSensory = { navController.navigate(AppDestinations.ACCESSIBILITY_SENSORY) },
+                onOpenProfile = { navController.navigate(AppDestinations.ACCESSIBILITY_PROFILE) }
+            )
         }
-    }
-}
+
+        composable(AppDestinations.ACCESSIBILITY_WHEELCHAIR) {
+            WheelchairAccessibilityScreen(container = container, onBack = { navController.popBackStack() })
+        }
+
+        composable(AppDestinations.ACCESSIBILITY_NOISE) {
+            LoudNoiseScreen(container = container, onBack = { navController.popBackStack() })
+        }
+
+        composable(AppDestinations.ACCESSIBILITY_NO_MUSIC) {
+            NoMusicScreen(container = container, onBack = { navController.popBackStack() })
+        }
+
+        composable(AppDestinations.ACCESSIBILITY_SENSORY) {
+            SensoryPreferencesScreen(container = container, onBack = { navController.popBackStack() })
+        }
+
+        composable(AppDestinations.ACCESSIBILITY_PROFILE) {
+            AccessibilityProfileScreen(
+                container = container,
+                onBack = { navController.popBackStack() },
+                onEdit = { navController.navigate(AppDestinations.ACCESSIBILITY) }
+            )
+        }
+
+        composable(AppDestinations.COMMUTE) {
+            CommutePreferencesScreen(container = container, onBack = { navController.popBackStack() })
+        }
+
+        composable(AppDestinations.INTERESTS) {
+            InterestsScreen(container = container, onBack = { navController.popBackStack() })
+        }
+
+        composable(AppDestinations.MY_TICKETS) {
+            MyTicketsScreen(
+                container = container,
+                onBack = { navController.popBackStack() },
+                onEventClick = { navController.navigate(AppDestinations.eventDetail(it)) }
+            )
+        }
+
+        composable(AppDestinations.COLLECTIONS) {
+            CollectionsScreen(
+                container = container,
+                onBack = { navController.popBackStack() },
+                onEventClick = { navController.navigate(AppDestinations.eventDetail(it)) }
+            )
+        }
+
+        composable(AppDestinations.BLOCKED_USERS) {
+            BlockedUsersScreen(
+                container = container,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(AppDestinations.MODERATION) {
+            ModerationScreen(container = container, onBack = { navController.popBackStack() })
+        }
+
+        composable(
+            route = AppDestinations.REPORT_SCAM,
+            arguments = listOf(navArgument("targetId") { type = NavType.StringType })
+        ) { entry ->
+            ReportScamScreen(
+                container = container,
+                targetId = entry.arguments?.getString("targetId").orEmpty(),
+                targetType = "event",
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+                        composable(AppDestinations.EDIT_PROFILE) {
+                            EditProfileScreen(container = container, onBack = { navController.popBackStack() })
+                        }
+
+                        composable(
+                            route = AppDestinations.GROUP_PLANNING,
+                            arguments = listOf(navArgument("eventId") { type = NavType.StringType })
+                        ) { entry ->
+                            GroupPlanningScreen(
+                                container = container,
+                                eventId = entry.arguments?.getString("eventId").orEmpty(),
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        composable(
+                            route = AppDestinations.TICKET_SCANNER,
+                            arguments = listOf(navArgument("eventId") { type = NavType.StringType })
+                        ) { entry ->
+                            TicketScannerScreen(
+                                container = container,
+                                eventId = entry.arguments?.getString("eventId").orEmpty(),
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
+                    }
+                }
 
 /** Bottom navigation destinations (Home, Search, Create, Favorites, Profile). */
 private enum class EventFinderDestination(
     val route: String,
     val labelRes: Int,
-    val icon: ImageVector
+    val icon: ImageVector,
+    val selectedIcon: ImageVector
 ) {
-    HOME("home", R.string.discover_events, Icons.Outlined.Home),
-    SEARCH("search", R.string.search_title, Icons.Outlined.Search),
-    CREATE("create", R.string.create_event_title, Icons.Filled.AddCircle),
-    FAVORITES("favorites", R.string.favorites_title, Icons.Outlined.Favorite),
-    PROFILE("profile", R.string.profile_title, Icons.Outlined.Person)
+    HOME(
+        "home",
+        R.string.discover_events,
+        Icons.Outlined.Explore,
+        Icons.Filled.Explore
+    ),
+    SEARCH(
+        "search",
+        R.string.search_title,
+        Icons.Outlined.Search,
+        Icons.Filled.Search
+    ),
+    CREATE(
+        "create",
+        R.string.create_event_title,
+        Icons.Outlined.AddCircle,
+        Icons.Filled.AddCircle
+    ),
+    FAVORITES(
+        "favorites",
+        R.string.favorites_title,
+        Icons.Outlined.FavoriteBorder,
+        Icons.Filled.Favorite
+    ),
+    PROFILE(
+        "profile",
+        R.string.profile_title,
+        Icons.Outlined.Person,
+        Icons.Filled.Person
+    )
 }
 
 @Composable
@@ -209,36 +430,93 @@ private fun EventFinderBottomBar(
     currentRoute: String?,
     onNavigate: (String) -> Unit
 ) {
-    NavigationBar(
-        modifier = Modifier.fillMaxWidth()
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 12.dp
     ) {
-        EventFinderDestination.entries.forEach { destination ->
-            NavigationBarItem(
-                selected = currentRoute == destination.route,
-                onClick = {
-                    if (currentRoute != destination.route) {
-                        onNavigate(destination.route)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = 10.dp,
+                    vertical = 9.dp
+                ),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            EventFinderDestination.entries.forEach { destination ->
+
+                val selected = currentRoute == destination.route
+                val isCreate = destination == EventFinderDestination.CREATE
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(16.dp))
+                        .clickable {
+                            if (!selected) onNavigate(destination.route)
+                        }
+                        .padding(vertical = 5.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    if (isCreate) {
+                        CreatePngButton(
+                            contentDescription = stringResource(destination.labelRes),
+                            selected = selected,
+                            onClick = { if (!selected) onNavigate(destination.route) }
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(
+                                    if (selected) {
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    } else {
+                                        Color.Transparent
+                                    }
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = if (selected) {
+                                    destination.selectedIcon
+                                } else {
+                                    destination.icon
+                                },
+                                contentDescription = stringResource(destination.labelRes),
+                                tint = if (selected) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                                modifier = Modifier.size(23.dp)
+                            )
+                        }
                     }
-                },
-                icon = {
-                    Icon(
-                        imageVector = destination.icon,
-                        contentDescription = stringResource(destination.labelRes)
-                    )
-                },
-                label = {
+
+                    Spacer(Modifier.height(3.dp))
+
                     Text(
-                        text = stringResource(destination.labelRes),
-                        textAlign = TextAlign.Center,
-                        maxLines = 1
+                        text = stringResource(if (isCreate) R.string.create_short else destination.labelRes),
+                        maxLines = 1,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = if (selected || isCreate) {
+                            FontWeight.Bold
+                        } else {
+                            FontWeight.Medium
+                        },
+                        color = when {
+                            isCreate -> MaterialTheme.colorScheme.onSurface
+                            selected -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
                     )
-                },
-                alwaysShowLabel = true,
-                colors = NavigationBarItemDefaults.colors(
-                    indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                    selectedIconColor = MaterialTheme.colorScheme.primary
-                )
-            )
+                }
+            }
         }
     }
 }
@@ -260,7 +538,8 @@ private fun MainScreen(container: AppContainer, navController: NavHostController
             when (selectedTab) {
                 EventFinderDestination.HOME.route -> HomeScreen(
                     container = container,
-                    onEventClick = { navController.navigate(AppDestinations.eventDetail(it)) }
+                    onEventClick = { navController.navigate(AppDestinations.eventDetail(it)) },
+                    onSeeAll = { selectedTab = EventFinderDestination.SEARCH.route }
                 )
                 EventFinderDestination.SEARCH.route -> SearchScreen(
                     container = container,
@@ -279,6 +558,11 @@ private fun MainScreen(container: AppContainer, navController: NavHostController
                     onEditProfile = { navController.navigate(AppDestinations.EDIT_PROFILE) },
                     onSettings = { navController.navigate(AppDestinations.SETTINGS) },
                     onEventClick = { navController.navigate(AppDestinations.eventDetail(it)) },
+                    onMyTickets = { navController.navigate(AppDestinations.MY_TICKETS) },
+                    onCollections = { navController.navigate(AppDestinations.COLLECTIONS) },
+                    onAccessibility = { navController.navigate(AppDestinations.ACCESSIBILITY) },
+                    onInterests = { navController.navigate(AppDestinations.INTERESTS) },
+                    onCommute = { navController.navigate(AppDestinations.COMMUTE) },
                     onLogin = { navController.navigate(AppDestinations.LOGIN) },
                     onLoggedOut = {
                         navController.navigate(AppDestinations.LOGIN) {
@@ -290,3 +574,7 @@ private fun MainScreen(container: AppContainer, navController: NavHostController
         }
     }
 }
+
+
+
+

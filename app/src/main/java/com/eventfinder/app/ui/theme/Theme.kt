@@ -1,102 +1,239 @@
 package com.eventfinder.app.ui.theme
 
+import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
-/**
- * Light colour scheme. Every role is mapped explicitly rather than letting
- * Material derive tints from the seed colours, so containers and "on" colours
- * keep a consistent, brand-correct contrast across the app.
- */
+private val EventFinderTypography = Typography(
+    displayLarge = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.ExtraBold,
+        fontSize = 34.sp,
+        lineHeight = 40.sp,
+        letterSpacing = (-0.8).sp
+    ),
+    displayMedium = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Bold,
+        fontSize = 30.sp,
+        lineHeight = 36.sp,
+        letterSpacing = (-0.5).sp
+    ),
+    headlineLarge = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.ExtraBold,
+        fontSize = 28.sp,
+        lineHeight = 34.sp
+    ),
+    headlineMedium = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Bold,
+        fontSize = 24.sp,
+        lineHeight = 30.sp
+    ),
+    headlineSmall = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Bold,
+        fontSize = 21.sp,
+        lineHeight = 27.sp
+    ),
+    titleLarge = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Bold,
+        fontSize = 20.sp,
+        lineHeight = 26.sp
+    ),
+    titleMedium = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 16.sp,
+        lineHeight = 22.sp
+    ),
+    titleSmall = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 14.sp,
+        lineHeight = 20.sp
+    ),
+    bodyLarge = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 24.sp
+    ),
+    bodyMedium = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        lineHeight = 21.sp
+    ),
+    bodySmall = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Normal,
+        fontSize = 12.sp,
+        lineHeight = 18.sp
+    ),
+    labelLarge = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 14.sp,
+        lineHeight = 20.sp
+    ),
+    labelMedium = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 12.sp,
+        lineHeight = 16.sp
+    ),
+    labelSmall = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Medium,
+        fontSize = 10.sp,
+        lineHeight = 14.sp
+    )
+)
+
 private val LightColors = lightColorScheme(
-    primary = Green,
+    primary = BrandGreen,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFB6F3DF),
-    onPrimaryContainer = Color(0xFF0B3D2E),
-    // Amber is too light for white text, so the "on" colour is a dark brown.
-    secondary = Amber,
-    onSecondary = Color(0xFF3B2F00),
-    secondaryContainer = Color(0xFFFFECB3),
-    onSecondaryContainer = Color(0xFF4A3B00),
-    tertiary = Navy,
+    primaryContainer = Color(0xFFD8F2E5),
+    onPrimaryContainer = Color(0xFF002817),
+
+    secondary = BrandGold,
+    onSecondary = Color(0xFF332300),
+    secondaryContainer = Color(0xFFFFE8B0),
+    onSecondaryContainer = Color(0xFF261A00),
+
+    tertiary = BrandBlue,
     onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFD6E3FF),
-    onTertiaryContainer = Color(0xFF0A1F3D),
-    background = OffWhite,
-    onBackground = Charcoal,
-    surface = Color.White,
-    onSurface = Charcoal,
-    surfaceVariant = Color(0xFFE9ECF0),
-    onSurfaceVariant = Color(0xFF44474C),
-    outline = Color(0xFFB9BDC4),
-    outlineVariant = Color(0xFFD6D9DE),
-    error = Red,
-    onError = Color.White,
-    errorContainer = Color(0xFFFFDAD6),
-    onErrorContainer = Color(0xFF410002)
+    tertiaryContainer = Color(0xFFE0E5FF),
+    onTertiaryContainer = Color(0xFF00105C),
+
+    background = SurfaceOffWhite,
+    onBackground = Color(0xFF17191D),
+
+    surface = BrandWhite,
+    onSurface = Color(0xFF17191D),
+
+    surfaceVariant = Color(0xFFE9EDF1),
+    onSurfaceVariant = Color(0xFF454B52),
+
+    outline = Color(0xFFD9DEE5),
+    outlineVariant = Color(0xFFE7EBF0),
+
+    error = BrandRed,
+    onError = Color.White
 )
 
-/** Dark scheme mirror of [LightColors], tuned for legibility on dark surfaces. */
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFF3ED9AE),
-    onPrimary = Color(0xFF0B3D2E),
-    primaryContainer = Color(0xFF0B5C45),
-    onPrimaryContainer = Color(0xFFB6F3DF),
-    secondary = Color(0xFFFFCA3D),
-    onSecondary = Color(0xFF3B2F00),
-    secondaryContainer = Color(0xFF5C4700),
-    onSecondaryContainer = Color(0xFFFFE7A3),
-    tertiary = Color(0xFF8FB6FF),
-    onTertiary = Color(0xFF0A1F3D),
-    tertiaryContainer = Color(0xFF274063),
-    onTertiaryContainer = Color(0xFFD6E3FF),
-    background = DarkSurface,
-    onBackground = Color(0xFFE3E5E9),
-    surface = DarkSurfaceHigh,
-    onSurface = Color(0xFFE3E5E9),
-    surfaceVariant = Color(0xFF2A2E34),
-    onSurfaceVariant = Color(0xFFC2C6CD),
-    outline = Color(0xFF565A61),
-    outlineVariant = Color(0xFF3A3E44),
-    error = Color(0xFFFF8A80),
-    onError = Color(0xFF3A0000),
-    errorContainer = Color(0xFF930006),
-    onErrorContainer = Color(0xFFFFDAD6)
+    // Showcase dark-mode accent: bright emerald green.
+    primary = Color(0xFF00C98D),
+    onPrimary = Color(0xFF003820),
+    // 2026 palette: "primary dark" #00906B for contained accents.
+    primaryContainer = Color(0xFF00906B),
+    onPrimaryContainer = Color(0xFFFFFFFF),
+
+    secondary = BrandGold,
+    onSecondary = Color(0xFF332300),
+    secondaryContainer = Color(0xFF5C4300),
+    onSecondaryContainer = Color(0xFFFFE8B0),
+
+    tertiary = Color(0xFFAAB6FF),
+    onTertiary = Color(0xFF00105C),
+    tertiaryContainer = Color(0xFF182A86),
+    onTertiaryContainer = Color(0xFFE0E5FF),
+
+    // 2026 dark palette: #0B1929 background, #14203A surface, #1E2A44 raised
+    // cards, #2D3E52 borders and the blue-grey secondary text.
+    background = Color(0xFF0B1929),
+    onBackground = Color(0xFFFFFFFF),
+
+    surface = Color(0xFF14203A),
+    onSurface = Color(0xFFFFFFFF),
+
+    surfaceVariant = Color(0xFF1E2A44),
+    onSurfaceVariant = Color(0xFFA6B8D1),
+
+    outline = Color(0xFF2D3E52),
+    outlineVariant = Color(0xFF24334A),
+
+    error = Color(0xFFEF4444),
+    onError = Color(0xFFFFFFFF)
 )
 
-/**
- * Consistent corner rounding for buttons, chips, text fields, cards and dialogs.
- * Components that do not override their own shape pick these up automatically,
- * giving the whole UI a single, softer visual language.
- */
-private val AppShapes = Shapes(
-    extraSmall = RoundedCornerShape(6.dp),
-    small = RoundedCornerShape(10.dp),
-    medium = RoundedCornerShape(16.dp),
-    large = RoundedCornerShape(20.dp),
-    extraLarge = RoundedCornerShape(28.dp)
+private val EventFinderShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(18.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(30.dp)
 )
 
-/**
- * Material 3 theme. Supports light/dark following the system setting.
- */
 @Composable
 fun EventFinderTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = false,
+    highContrast: Boolean = false,
     content: @Composable () -> Unit
 ) {
+    val colors = when {
+        highContrast && darkTheme -> darkColorScheme(
+            primary = Color.White,
+            onPrimary = Color.Black,
+            background = Color.Black,
+            onBackground = Color.White,
+            surface = Color.Black,
+            onSurface = Color.White,
+            surfaceVariant = Color(0xFF202020),
+            onSurfaceVariant = Color.White
+        )
+
+        highContrast -> lightColorScheme(
+            primary = Color.Black,
+            onPrimary = Color.White,
+            background = Color.White,
+            onBackground = Color.Black,
+            surface = Color.White,
+            onSurface = Color.Black,
+            surfaceVariant = Color(0xFFF0F0F0),
+            onSurfaceVariant = Color.Black
+        )
+
+        // Material You dynamic colour on Android 12+, keeping the brand night
+        // background (#0B1929) as specified for dark mode.
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            val context = LocalContext.current
+            if (darkTheme) {
+                dynamicDarkColorScheme(context)
+                    .copy(background = Color(0xFF0B1929))
+            } else {
+                dynamicLightColorScheme(context)
+            }
+        }
+
+        darkTheme -> DarkColors
+        else -> LightColors
+    }
+
     MaterialTheme(
-        colorScheme = if (darkTheme) DarkColors else LightColors,
-        typography = Typography(),
-        shapes = AppShapes,
+        colorScheme = colors,
+        typography = EventFinderTypography,
+        shapes = EventFinderShapes,
         content = content
     )
 }

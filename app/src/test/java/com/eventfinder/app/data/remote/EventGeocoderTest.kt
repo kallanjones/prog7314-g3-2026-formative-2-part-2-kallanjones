@@ -6,6 +6,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class EventGeocoderTest {
@@ -85,38 +86,105 @@ class EventGeocoderTest {
         assertEquals(-25.75, coords!!.first, 0.001)
     }
 
-    @Test
-    fun `place candidates put the town before the venue and drop the province code`() {
-        val candidates = geocoder().placeCandidates("MAHEM RACEWAY, ZANDFONTEIN, PRETORIA, GP")
+    // ------------------------------------------------- candidate query strategy
 
-        assertEquals(listOf("PRETORIA", "ZANDFONTEIN", "MAHEM RACEWAY"), candidates)
+    /** Fake that only answers for the known keys and records every query. */
+    private class SelectiveGeocodingApi(
+        private val answers: Map<String, OmGeocodingResult>
+    ) : OpenMeteoGeocodingApi {
+        val queries = mutableListOf<String>()
+
+        override suspend fun geocode(
+            name: String,
+            count: Int,
+            language: String,
+            format: String
+        ): OmGeocodingResponse {
+            queries += name
+            val answer = answers.entries.firstOrNull { (key, _) ->
+                name.startsWith(key, ignoreCase = true)
+            }
+            return OmGeocodingResponse(answer?.let { listOf(it.value) } ?: emptyList())
+        }
+
+        override suspend fun elevation(
+            latitude: String,
+            longitude: String
+        ): com.eventfinder.app.data.remote.dto.OmElevationResponse =
+            com.eventfinder.app.data.remote.dto.OmElevationResponse(elevation = emptyList())
     }
 
-    @Test
-    fun `place candidates strip trailing ellipsis left by the feed`() {
-        val candidates = geocoder().placeCandidates("MAHEM RACEWAY, PRETORIA……")
-
-        assertEquals(listOf("PRETORIA", "MAHEM RACEWAY"), candidates)
-    }
-
-    @Test
-    fun `place candidates drop placeholder locations`() {
-        assertEquals(emptyList<String>(), geocoder().placeCandidates("TBA, KZN"))
-    }
-
-    @Test
-    fun `geocodes an address by falling back to its town`() = runTest {
-        // The API only knows the town, not the raceway, mirroring Open-Meteo.
-        val coder = geocoder(
-            OmGeocodingResult(
-                name = "Vereeniging", latitude = -26.67, longitude = 27.93,
-                country = "South Africa", countryCode = "ZA"
-            )
+    private fun za(name: String, lat: Double, lng: Double) =
+        OmGeocodingResult(
+            name = name, latitude = lat, longitude = lng,
+            country = "South Africa", countryCode = "ZA"
         )
 
-        val coords = coder.geocode("ULTIMATE OUTLAWS, LEEUWKUIL, VEREENIGING")
+    @Test
+    fun `falls back to the town when the venue name is unknown`() = runTest {
+        val api = SelectiveGeocodingApi(mapOf("Pretoria" to za("Pretoria", -25.75, 28.19)))
+
+        val coords = EventGeocoder(api).geocode("SunBet Arena Time Square, Pretoria")
+
+        assertNotNull("venue string should fall back to its town", coords)
+        assertEquals(-25.75, coords!!.first, 0.001)
+        assertTrue(api.queries.size > 1)
+        assertTrue(
+            "a town-only query should be attempted: ${api.queries}",
+            api.queries.any { it.startsWith("Pretoria") }
+        )
+    }
+
+    @Test
+    fun `unescapes ICS commas and finds the town`() = runTest {
+        val api = SelectiveGeocodingApi(mapOf("GQEBERHA" to za("GQEBERha", -33.96, 25.60)))
+
+        val coords = EventGeocoder(api)
+            .geocode("MISSION ROAD\\, GREENBUSHES\\, GQEBERHA\\, EC")
 
         assertNotNull(coords)
-        assertEquals(-26.67, coords!!.first, 0.001)
+        assertEquals(25.60, coords!!.second, 0.001)
+        assertTrue(api.queries.any { it.startsWith("GQEBERHA") })
+    }
+
+    @Test
+    fun `never queries a province code or placeholder on its own`() {
+        val coder = EventGeocoder(FakeGeocodingApi(emptyList()))
+
+        val candidates = coder.candidateQueries("KILLARNEY OVAL TRACK\\, WC")
+
+        assertTrue(candidates.isNotEmpty())
+        assertTrue(
+            "province codes are not places: $candidates",
+            candidates.none { it.startsWith("WC") || it.startsWith("EC") }
+        )
+        assertTrue(
+            "province codes are not places: $candidates",
+            coder.candidateQueries("TBA\\, KZN").none { it.startsWith("KZN") }
+        )
+        assertTrue("bounded API usage", candidates.size <= 5)
+    }
+
+    @Test
+    fun `cleans feed noise before querying`() {
+        val coder = EventGeocoder(FakeGeocodingApi(emptyList()))
+
+        val candidates = coder.candidateQueries("FORMULA K KART CIRCUIT\u2026\u2026")
+
+        assertTrue(candidates.isNotEmpty())
+        assertEquals("trailing ellipsis trimmed", "FORMULA K KART CIRCUIT, South Africa", candidates.first())
+    }
+
+    @Test
+    fun `does not retry a location that already failed`() = runTest {
+        val api = SelectiveGeocodingApi(emptyMap())
+        val coder = EventGeocoder(api)
+
+        assertNull(coder.geocode("Nowhere Special, EC"))
+        val queriesAfterFirst = api.queries.size
+        assertTrue(queriesAfterFirst in 1..5)
+
+        assertNull(coder.geocode("Nowhere Special, EC"))
+        assertEquals("failed lookup is memoised", queriesAfterFirst, api.queries.size)
     }
 }

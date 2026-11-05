@@ -99,10 +99,22 @@ class EventRepositoryTest {
             emit()
         }
 
+        override suspend fun deleteStale(cutoff: Long): Int {
+            val stale = rows.values
+                .filter { !it.isCreatedByUser && it.endDate < cutoff }
+                .map { it.id }
+            stale.forEach { rows.remove(it) }
+            emit()
+            return stale.size
+        }
+
         override suspend fun deleteCreatedByUser() {
             rows.values.filter { it.isCreatedByUser }.map { it.id }.forEach { rows.remove(it) }
             emit()
         }
+
+        override suspend fun getUserCreatedEventsForUser(userId: String): List<com.eventfinder.app.data.local.EventEntity> =
+            rows.values.filter { it.isCreatedByUser && it.organizerId == userId }
 
         override suspend fun deleteById(id: String) {
             rows.remove(id)
@@ -527,7 +539,7 @@ class EventRepositoryTest {
         val target = repo.observeAllEvents().first().first().id
         repo.setRsvp(target, RsvpStatus.ATTENDING)
 
-        repo.clearLocalCache()
+        assertEquals(1, repo.clearLocalCache())
 
         assertEquals(SampleEventsProvider.johannesburgAndCapeTown().size, dao.count())
         assertTrue(rsvps.attendingCount() > 0)
@@ -554,7 +566,7 @@ class EventRepositoryTest {
             )
         )
 
-        repo.clearLocalCache()
+        assertEquals(0, repo.clearLocalCache())
 
         val all = repo.observeAllEvents().first()
         assertTrue(all.isNotEmpty())

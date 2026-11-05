@@ -22,9 +22,15 @@ import kotlinx.coroutines.launch
 data class EditProfileUiState(
     val fullName: String = "",
     val email: String = "",
+    val avatarType: String = "initials",
+    val avatarUrl: String? = null,
+    val avatarImageUrl: String? = null,
+    val avatarUploading: Boolean = false,
     val saving: Boolean = false,
     val nameError: Int? = null,
-    val emailError: Int? = null
+    val emailError: Int? = null,
+    val verificationToken: String = "",
+    val verifying: Boolean = false
 )
 
 /**
@@ -45,20 +51,70 @@ class EditProfileViewModel(
         viewModelScope.launch {
             authRepository.currentUser.first()?.let { user ->
                 _uiState.update {
-                    it.copy(fullName = user.fullName, email = user.email)
+                    it.copy(
+                        fullName = user.fullName,
+                        email = user.email,
+                        avatarType = user.avatarType,
+                        avatarUrl = user.avatarUrl,
+                        avatarImageUrl = user.avatarImageUrl
+                    )
                 }
             }
         }
     }
 
-    fun onNameChange(v: String) = _uiState.update { it.copy(fullName = v, nameError = null) }
+    fun onAvatarTypeChange(v: String) =
+        _uiState.update { state ->
+            when (v) {
+                "uploaded" -> state.copy(avatarType = v)
+                else -> state.copy(avatarType = v, avatarUrl = null, avatarImageUrl = null)
+            }
+        }
+
+    fun onAvatarImageChange(url: String?) {
+        val normalized = url?.takeIf { it.isNotBlank() }
+        _uiState.update {
+            it.copy(
+                avatarType = "uploaded",
+                avatarUrl = normalized,
+                avatarImageUrl = normalized
+            )
+        }
+    }
+
+    fun setAvatarUploading(value: Boolean) =
+        _uiState.update { it.copy(avatarUploading = value) }    fun onNameChange(v: String) = _uiState.update { it.copy(fullName = v, nameError = null) }
     fun onEmailChange(v: String) = _uiState.update { it.copy(email = v, emailError = null) }
+    fun onVerificationTokenChange(v: String) = _uiState.update { it.copy(verificationToken = v) }
+
+    fun verifyEmail(onVerified: () -> Unit) {
+        val token = _uiState.value.verificationToken.trim()
+        if (token.isBlank()) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(verifying = true) }
+            val result = authRepository.verifyEmailChange(token)
+            _uiState.update { it.copy(verifying = false) }
+            result.fold(
+                onSuccess = {
+                    _messages.emit(UiMessage.Resource(R.string.profile_updated))
+                    // Refresh local profile from server.
+                    onVerified()
+                },
+                onFailure = {
+                    _messages.emit(UiMessage.Resource(R.string.save_failed))
+                }
+            )
+        }
+    }
 
     /** Returns true when validation passes; surfaces errors inline in the form. */
     fun validate(): Boolean {
         val state = _uiState.value
         val nameError = if (state.fullName.isBlank()) R.string.name_required else null
-        val emailError = if (!EmailValidator.isValid(state.email)) R.string.invalid_email else null
+        // Guest sessions have no email by design (see AuthRepository.continueAsGuest),
+        // so the email field is not enforced for them.
+        val isGuest = state.email.isBlank()
+        val emailError = if (!isGuest && !EmailValidator.isValid(state.email)) R.string.invalid_email else null
         _uiState.update { it.copy(nameError = nameError, emailError = emailError) }
         return nameError == null && emailError == null
     }
@@ -68,11 +124,24 @@ class EditProfileViewModel(
         if (state.saving || !validate()) return
         viewModelScope.launch {
             _uiState.update { it.copy(saving = true) }
+            authRepository.updateAvatarType(state.avatarType, state.avatarImageUrl ?: state.avatarUrl)
             val result = authRepository.updateProfile(state.fullName.trim(), state.email.trim())
             _uiState.update { it.copy(saving = false) }
             result.fold(
                 onSuccess = { _messages.emit(UiMessage.Resource(R.string.profile_updated)); onSaved() },
-                onFailure = { _messages.emit(UiMessage.Resource(R.string.save_failed)) }
+                onFailure = { throwable ->
+                    if (throwable.message == "email_verification_sent") {
+                        _messages.emit(UiMessage.Resource(R.string.profile_updated))
+                        onSaved()
+                    } else {
+                        _messages.emit(
+                            when (throwable.message) {
+                                "email_in_use" -> UiMessage.Resource(R.string.email_in_use)
+                                else -> UiMessage.Resource(R.string.save_failed)
+                            }
+                        )
+                    }
+                }
             )
         }
     }

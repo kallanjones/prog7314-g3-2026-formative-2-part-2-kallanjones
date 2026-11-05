@@ -71,12 +71,32 @@
     <string name="discover_events">Discover Events</string>
     <string name="search_placeholder">Search events…</string>
     <string name="all_categories">All</string>
+    <string name="cat_other">Other</string>
+    <string name="get_tickets">Get Tickets</string>
     <string name="cat_music">Music</string>
     <string name="cat_sports">Sports</string>
     <string name="cat_food">Food</string>
     <string name="cat_community">Community</string>
     <string name="cat_arts">Arts</string>
     <string name="cat_business">Business</string>
+    <string name="cat_concerts">Concerts</string>
+    <string name="cat_festivals">Festivals</string>
+    <string name="cat_nightlife">Nightlife</string>
+    <string name="cat_comedy">Comedy</string>
+    <string name="cat_networking">Networking</string>
+    <string name="cat_technology">Technology</string>
+    <string name="cat_education">Education</string>
+    <string name="cat_family">Family</string>
+    <string name="cat_markets">Markets</string>
+    <string name="cat_outdoors">Outdoors</string>
+    <string name="cat_travel">Travel</string>
+    <string name="cat_charity">Charity</string>
+    <string name="cat_theatre">Theatre</string>
+    <string name="cat_movies">Movies</string>
+    <string name="cat_fashion">Fashion</string>
+    <string name="cat_cars">Cars</string>
+    <string name="cat_wellness">Wellness</string>
+    <string name="cat_religion">Religion</string>
     <string name="map_view">Map</string>
     <string name="list_view">List</string>
     <string name="no_events">No events found</string>
@@ -109,6 +129,7 @@
     <string name="attending">Attending</string>
     <string name="share">Share</string>
     <string name="directions">Get Directions</string>
+    <string name="directions_unavailable">No app found to open directions</string>
     <string name="weather_at_venue">Weather at venue</string>
     <string name="weather_unavailable">Weather forecast unavailable</string>
     <string name="distance_away">away</string>
@@ -135,6 +156,12 @@
 
     <!-- Create event -->
     <string name="create_event_title">Create Event</string>
+  <string name="create_short">Create</string>
+  <string name="location_use_gps">Use my location</string>
+  <string name="repair_local_data">Repair local data</string>
+  <string name="repair_local_data_hint">Restore missing local event data</string>
+  <string name="local_data_repaired">Local data repaired</string>
+  <string name="local_data_repair_failed">Could not repair local data</string>
     <string name="step_x_of_y">Step %1$d of %2$d</string>
     <string name="event_title">Event title</string>
     <string name="event_description">Description</string>
@@ -217,6 +244,7 @@
     <string name="data_management">Data</string>
     <string name="clear_cache">Clear local cache</string>
     <string name="cache_cleared">Cache cleared</string>
+    <string name="cache_clear_blocked">Cache not cleared — you have %1$d active RSVP(s). Decline them first.</string>
     <string name="about">About</string>
     <string name="app_version">Version %1$s</string>
     <string name="privacy_policy">Privacy policy</string>
@@ -273,5 +301,111 @@
     <string name="event_reminders">Event reminders</string>
     <string name="event_reminders_hint">Notify me 24 hours and 1 hour before an event I am attending</string>
     <string name="new_events_alerts">New event alerts</string>
-    <string name="settings_about">%1$s prototype — events from the EventFinder REST API, plus free public feeds (Ardent Africa, Open-Meteo, OpenStreetMap).</string>
+    <string name="settings_about">%1$s prototype — built with free APIs (Ardent Africa, Open-Meteo, OpenStreetMap).</string>
+
+  <!-- Backend password reset (two-step, email-verified) -->
+  <string name="reset_send_token_hint">Enter your email and we will send a single-use reset token.</string>
+  <string name="reset_enter_token_hint">Enter the token from your reset email together with a new password.</string>
+  <string name="reset_token_label">Reset token</string>
+  <string name="reset_send_token_action">Send token</string>
+  <string name="reset_email_sent">If an account exists for that email, a reset token has been sent.</string>
+  <string name="invalid_token">That reset token is invalid or has expired.</string>
+
+  <!-- Google sign-in -->
+  <string name="google_sign_in_failed">Google sign-in failed. Please try again.</string>
+
+  <!-- Discovery defaults (Settings) -->
+  <string name="discovery_settings">Discovery defaults</string>
+  <string name="default_city">Default city</string>
+  <string name="default_city_hint">e.g. Johannesburg — used when location is off</string>
+  <string name="default_radius">Search radius</string>
+  <string name="radius_km_value">%d km</string>
+  <string name="reviews" translatable="false">Reviews</string>
+  <string name="average_rating" translatable="false">Average rating</string>
+  <string name="write_review" translatable="false">Write a verified review</string>
+  <string name="review_comment_optional" translatable="false">Optional review comment</string>
+  <string name="submit_review" translatable="false">Submit review</string>
+  <string name="review_submitted" translatable="false">Review saved</string>
+  <string name="no_reviews_yet" translatable="false">No reviews yet</string>
+  <string name="your_rating" translatable="false">Your rating</string>
+  <string name="tap_to_rate" translatable="false">Tap to rate</string>
+  <string name="source_link" translatable="false">Open source link</string>
+  <string name="capacity" translatable="false">Capacity</string>
+  <string name="avatar_content_description">Profile avatar</string>
+  <string name="edit_avatar">Edit avatar</string>
+  <!-- Avatar styles -->
+  <string name="avatar_style_default">Default</string>
+  <string name="avatar_style_male">Male</string>
+  <string name="avatar_style_female">Female</string>
+  <string name="photo_import_failed">Couldn\'t read that photo. Please choose another.</string>
+  <string name="email_verification_token">Email verification token</string>
+  <string name="verify_email_change">Verify change</string>
+  <string name="avatar_desc_photo">Profile photo</string>
+  <string name="avatar_desc_male">Profile avatar, male style</string>
+  <string name="avatar_desc_female">Profile avatar, female style</string>
+  <string name="avatar_desc_initials">Profile initials</string>
+  <!-- Ratings &amp; reviews -->
+  <string name="reviews_title">Ratings &amp; reviews</string>
+  <string name="no_reviews">No reviews yet — be the first.</string>
+  <string name="reviews_count">%1$d reviews</string>
+  <string name="verified_attendee">Verified attendee</string>
+  <string name="delete_review">Delete review</string>
+  <string name="review_comment_hint">What did you think? (optional)</string>
+  <string name="rate_stars">Rate %1$d stars</string>
+  <string name="review_saved">Review saved</string>
+  <string name="review_deleted">Review deleted</string>
+  <string name="review_failed">Couldn\'t save the review. Try again.</string>
+  <string name="close">Close</string>
+  <string name="my_ticket_title">My ticket</string>
+  <string name="my_tickets">My tickets</string>
+  <string name="ticket_ready">Ticket ready</string>
+  <string name="ticket_show_at_gate">Show this QR code at the gate</string>
+  <string name="ticket_checked_in">Checked in</string>
+  <string name="ticket_qr_desc">QR code for ticket %1$s</string>
+  <string name="recurring_event">Recurring</string>
+  <string name="reviews_filtered_empty">No reviews match this filter</string>
+  <string name="no_tickets_yet">No tickets yet - RSVP to an event to get yours</string>
+  <string name="background_sync">Background sync</string>
+  <string name="background_sync_desc">Refresh events automatically while the app is closed</string>
+  <string name="draft_restored">Draft restored - finish or discard it</string>
+  <string name="discard_draft">Discard draft</string>
+  <string name="review_verified">Verified attendee</string>
+  <string name="review_photo">Review photo</string>
+  <string name="ticket_ready_for">Your ticket for %1$s is ready</string>
+
+  <!-- Organizer profile -->
+  <string name="organizer_profile_title">Organizer Profile</string>
+  <string name="verified_organizer">Verified Organizer</string>
+  <string name="upcoming_events">Upcoming events</string>
+  <string name="report_organizer">Report Organizer</string>
+  <string name="report_submitted">Report submitted</string>
+  <string name="host_line">Hosts %1$d events across South Africa.</string>
+  <string name="contact">Contact</string>
+  <string name="organizer_events_label">Events</string>
+  <string name="organizer_rating_label">Rating</string>
+  <string name="view_profile">View profile</string>
+  <string name="share_with_friends">Share with Friends!</string>
+  <string name="link_copied">Link copied</string>
+
+  <!-- Map route panel (Google Maps-style blue route) -->
+  <string name="route_show">Show route</string>
+  <string name="route_calculating">Calculating route\u2026</string>
+  <string name="route_unavailable">Route unavailable</string>
+  <string name="route_start_navigation">Start navigation</string>
+  <string name="route_recenter">Recenter route</string>
+  <string name="route_close">Close route</string>
+  <string name="route_mode_drive">Drive</string>
+  <string name="route_mode_walk">Walk</string>
+  <string name="route_mode_cycle">Cycle</string>
+  <string name="route_cached">Cached route</string>
+  <string name="route_location_needed">Turn on location to calculate a route</string>
+  <string name="route_option">Route %1$d</string>
+
+  <!-- Spec-sheet button states -->
+  <string name="getting_tickets">Getting Tickets\u2026</string>
+  <string name="tickets_added">Tickets Added!</string>
+  <string name="try_again">Try Again</string>
+  <string name="reporting">Reporting\u2026</string>
+  <string name="report_sent">Report Submitted</string>
+  <string name="share_event">Share event</string>
 </resources>

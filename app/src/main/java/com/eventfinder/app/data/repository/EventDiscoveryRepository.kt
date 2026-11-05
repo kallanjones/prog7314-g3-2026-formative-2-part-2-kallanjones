@@ -4,6 +4,7 @@ import com.eventfinder.app.data.local.EventDao
 import com.eventfinder.app.data.local.EventEntity
 import com.eventfinder.app.data.local.SourceSyncEntity
 import com.eventfinder.app.data.remote.EventGeocoder
+import com.eventfinder.app.data.remote.EventImageResolver
 import com.eventfinder.app.data.remote.model.RemoteEvent
 import com.eventfinder.app.data.sources.EventSource
 import com.eventfinder.app.domain.model.EventCategory
@@ -18,10 +19,17 @@ import java.util.concurrent.TimeUnit
 class EventDiscoveryRepository(
     private val eventDao: EventDao,
     private val sources: List<EventSource>,
-    private val geocoder: EventGeocoder? = null
+    private val geocoder: EventGeocoder? = null,
+    private val apiClient: com.eventfinder.app.data.remote.EventFinderApiClient? = null,
+    private val imageResolver: EventImageResolver? = null
 ) {
     private val tag = "EventDiscoveryRepository"
     private val refreshMutex = Mutex()
+
+    private companion object {
+        /** organizerId used for events merged from the shared backend catalogue. */
+        const val BACKEND_ORGANIZER_ID = "api:backend"
+    }
 
     /**
      * Runs the whole discovery pipeline on [Dispatchers.IO]. Callers (e.g.
@@ -51,12 +59,19 @@ class EventDiscoveryRepository(
             if (result.failed || result.inserted == 0) continue
             val organizerId = result.organizerId
 
-            val entities = result.events.map { it.toEntity(organizerId) }
+            val resolvedEvents = result.events.map { event ->
+                imageResolver?.resolve(event) ?: event
+            }
+            val entities = resolvedEvents.map { it.toEntity(organizerId) }
             if (entities.isNotEmpty()) {
                 eventDao.replaceEventsForSource(organizerId, entities)
                 totalInserted += entities.size
             }
         }
+
+        // Merge the shared public catalogue hosted on the EventFinder API so
+        // events created by other users become discoverable here too.
+        totalInserted += refreshBackendEvents()
 
         val totalFetched = sourceResults.sumOf { it.fetched }
         val failedSources = sourceResults.count { it.failed }
@@ -81,6 +96,56 @@ class EventDiscoveryRepository(
             failedSources = failedSources,
             sourceResults = sourceResults
         )
+    }
+
+    /**
+     * Pulls the shared public catalogue from the EventFinder backend and
+     * replaces the `api:backend` slice of Room with it. IDs are stored as
+     * `api:{serverGuid}` so they can never collide with local UUIDs or the
+     * `remote:` ids used by the public JSON feeds.
+     */
+    private suspend fun refreshBackendEvents(): Int {
+        val client = apiClient ?: return 0
+        return try {
+            val remote = client.publicEvents().getOrNull() ?: return 0
+            val entities = remote.mapNotNull { e ->
+                val imageUrl = e.imageUrl
+                val start = com.eventfinder.app.data.remote.EventFinderApiClient
+                    .parseIso(e.startUtc) ?: return@mapNotNull null
+                val end = com.eventfinder.app.data.remote.EventFinderApiClient
+                    .parseIso(e.endUtc) ?: start
+                if (start < System.currentTimeMillis() - TimeUnit.DAYS.toMillis(1)) {
+                    return@mapNotNull null
+                }
+                EventEntity(
+                    id = "api:${e.id}",
+                    title = e.title,
+                    description = e.description,
+                    category = e.category,
+                    startDate = start,
+                    endDate = end,
+                    venueName = e.venueName,
+                    address = e.address,
+                    latitude = e.latitude,
+                    longitude = e.longitude,
+                    imageUrl = imageUrl,
+                    sourceUrl = null,
+                    isPublic = true,
+                    organizerId = BACKEND_ORGANIZER_ID,
+                    organizerName = e.organizerName.ifBlank { "EventFinder" },
+                    attendeeCount = e.attendeeCount,
+                    isCreatedByUser = false
+                )
+            }
+            if (entities.isNotEmpty()) {
+                eventDao.replaceEventsForSource(BACKEND_ORGANIZER_ID, entities)
+                AppLogger.i(tag, "Backend catalogue: ${entities.size} public events merged")
+            }
+            entities.size
+        } catch (e: Exception) {
+            AppLogger.w(tag, "Backend catalogue refresh failed: ${e.message}")
+            0
+        }
     }
 
     private suspend fun fetchSource(source: EventSource): SourceResult {
@@ -141,7 +206,7 @@ class EventDiscoveryRepository(
                 AppLogger.w(
                     tag,
                     "Suspiciously small update from ${source.displayName}: " +
-                        "${validEvents.size} new vs $existingCount cached — keeping cached events"
+                        "${validEvents.size} new vs $existingCount cached � keeping cached events"
                 )
                 recordSync(source.id, lastSuccessAt = null, lastEmptyAt = System.currentTimeMillis())
                 return SourceResult(
@@ -214,19 +279,19 @@ class EventDiscoveryRepository(
             id = "remote:$stableId",
             title = title,
             description = description,
-            category = mapCategory(category),
+            // Feeds frequently publish an unusable category ("other",
+            // "all_categories"); falling back to the title keeps the category
+            // filters, chips and collections meaningful for those events.
+            category = mapCategory(category).takeUnless { it == EventCategory.OTHER.labelKey }
+                ?: mapCategory("$title $description"),
             startDate = startDate,
             endDate = endDate,
             venueName = venueName,
             address = address,
             latitude = latitude,
             longitude = longitude,
-            // Calendar/RSS feeds (e.g. the Motorsport ICS feed) rarely carry an
-            // image, which left those cards showing an empty placeholder. Fall
-            // back to a deterministic, keyless Picsum photo seeded by the event's
-            // stable id so every discovered event has a consistent picture.
-            imageUrl = imageUrl?.takeIf { it.isNotBlank() }
-                ?: "https://picsum.photos/seed/${placeholderSeed(stableId)}/800/450",
+            imageUrl = imageUrl,
+            sourceUrl = sourceUrl,
             isPublic = true,
             organizerId = organizerId,
             organizerName = organizerName ?: source,
@@ -235,29 +300,46 @@ class EventDiscoveryRepository(
         )
     }
 
-    /**
-     * A URL-safe, stable seed for the Picsum placeholder image. Keeps only
-     * alphanumerics from the event's stable id so the same event always maps to
-     * the same photo, and never produces a broken URL.
-     */
-    private fun placeholderSeed(stableId: String): String =
-        stableId.filter { it.isLetterOrDigit() }.take(24).ifBlank { "eventfinder" }
-
     private fun mapCategory(raw: String): String {
         val value = raw.trim().lowercase()
         return when {
-            value.contains("music") || value.contains("concert") || value.contains("festival") ->
-                EventCategory.MUSIC.labelKey
+            value.contains("festival") -> EventCategory.FESTIVALS.labelKey
+            value.contains("music") -> EventCategory.MUSIC.labelKey
+            value.contains("concert") -> EventCategory.CONCERTS.labelKey
+            value.contains("nightlife") || value.contains("night club") || value.contains("club") || value.contains("rave") ->
+                EventCategory.NIGHTLIFE.labelKey
             value.contains("sport") || value.contains("football") || value.contains("rugby") || value.contains("running") ->
                 EventCategory.SPORTS.labelKey
-            value.contains("food") || value.contains("market") || value.contains("restaurant") ->
+            value.contains("enduro") || value.contains("motocross") || value.contains("karting") ||
+                value.contains("rally") || value.contains("racing") || Regex("\\brace\\b").containsMatchIn(value) ->
+                EventCategory.SPORTS.labelKey
+            value.contains("market") -> EventCategory.MARKETS.labelKey
+            value.contains("food") || value.contains("restaurant") || value.contains("dinner") ->
                 EventCategory.FOOD.labelKey
-            value.contains("art") || value.contains("theatre") || value.contains("theater") || value.contains("culture") || value.contains("museum") ->
-                EventCategory.ARTS.labelKey
-            value.contains("business") || value.contains("conference") || value.contains("network") ->
-                EventCategory.BUSINESS.labelKey
-            value.contains("community") || value.contains("charity") ->
-                EventCategory.COMMUNITY.labelKey
+            value.contains("comedy") || value.contains("stand-up") || value.contains("stand up") ->
+                EventCategory.COMEDY.labelKey
+            value.contains("art") || value.contains("theatre") || value.contains("theater") || value.contains("culture") || value.contains("museum") -> EventCategory.ARTS.labelKey
+            value.contains("network") -> EventCategory.NETWORKING.labelKey
+            value.contains("business") || value.contains("conference") -> EventCategory.BUSINESS.labelKey
+            value.contains("tech") || value.contains("hackathon") || value.contains("software") ->
+                EventCategory.TECHNOLOGY.labelKey
+            value.contains("education") || value.contains("workshop") || value.contains("course") || value.contains("seminar") -> EventCategory.EDUCATION.labelKey
+            value.contains("family") || value.contains("kids") -> EventCategory.FAMILY.labelKey
+            value.contains("outdoor") || value.contains("hike") || value.contains("nature") ->
+                EventCategory.OUTDOORS.labelKey
+            value.contains("travel") || value.contains("tour") -> EventCategory.TRAVEL.labelKey
+            value.contains("charity") || value.contains("fundraiser") -> EventCategory.CHARITY.labelKey
+            value.contains("movie") || value.contains("cinema") || value.contains("film") ->
+                EventCategory.MOVIES.labelKey
+            value.contains("fashion") -> EventCategory.FASHION.labelKey
+            value.contains("cars ") || value.endsWith("car") || value.contains("motorsport") ||
+                value.contains("car show") || value.contains("auto show") ->
+                EventCategory.CARS.labelKey
+            value.contains("yoga") || value.contains("wellness") || value.contains("meditation") ->
+                EventCategory.WELLNESS.labelKey
+            value.contains("church") || value.contains("faith") || value.contains("worship") ->
+                EventCategory.RELIGION.labelKey
+            value.contains("community") -> EventCategory.COMMUNITY.labelKey
             else -> EventCategory.OTHER.labelKey
         }
     }

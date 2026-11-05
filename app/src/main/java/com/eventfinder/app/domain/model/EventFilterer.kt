@@ -27,7 +27,8 @@ object EventFilterer {
         category: EventCategory? = null,
         userLat: Double? = null,
         userLng: Double? = null,
-        radiusKm: Int = 0
+        radiusKm: Int = 0,
+        accessibilityNeeds: Set<String> = emptySet()
     ): List<Event> {
         val normalizedQuery = query?.trim()?.lowercase()
         return events.filter { event ->
@@ -47,7 +48,18 @@ object EventFilterer {
                         userLat, userLng, event.latitude, event.longitude
                     ) <= radiusKm)
 
-            matchesQuery && matchesCategory && matchesRadius
+            val matchesAccessibility = accessibilityNeeds.isEmpty() || accessibilityNeeds.all { need ->
+                when (need) {
+                    "wheelchair" -> event.wheelchairAccessible
+                    "lowSensory" -> event.sensoryFriendly && !event.loudMusic && !event.strobeLights
+                    "noMusic" -> !event.loudMusic
+                    "loudNoise" -> !event.loudMusic && !event.strobeLights
+                    "hearing" -> true // no specific field; pass through
+                    else -> true
+                }
+            }
+
+            matchesQuery && matchesCategory && matchesRadius && matchesAccessibility
         }
     }
 
@@ -67,19 +79,38 @@ object EventFilterer {
                 else DistanceCalculator.between(userLat, userLng, event.latitude, event.longitude)
             }
         }
+        EventSort.ACCESSIBILITY -> events.sortedWith(
+            compareByDescending<Event> { it.sensoryFriendly }
+                .thenByDescending { it.wheelchairAccessible }
+                .thenBy { it.loudMusic }
+                .thenBy { it.strobeLights }
+        )
+        // "Trending": most popular first (attendance), soonest first on ties.
+        EventSort.TRENDING -> events.sortedWith(
+            compareByDescending<Event> { it.attendeeCount }
+                .thenBy { it.startDate }
+        )
     }
 
-    /** Enriches a filtered list with per-event distance in km. */
+    /**
+     * Enriches a filtered list with per-event distance in km and the user's
+     * favourite state so every list/card can render the filled heart.
+     */
     fun attachDistances(
         events: List<Event>,
         userLat: Double?,
-        userLng: Double?
+        userLng: Double?,
+        favoriteIds: Set<String> = emptySet()
     ): List<EventView> = events.map { event ->
         val distance = if (userLat != null && userLng != null &&
             event.latitude != null && event.longitude != null
         ) {
             DistanceCalculator.between(userLat, userLng, event.latitude, event.longitude)
         } else null
-        EventView(event, distanceKm = distance)
+        EventView(
+            event = event,
+            distanceKm = distance,
+            isFavorite = event.id in favoriteIds
+        )
     }
 }

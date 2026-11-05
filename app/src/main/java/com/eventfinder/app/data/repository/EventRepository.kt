@@ -1,5 +1,6 @@
 package com.eventfinder.app.data.repository
 
+import com.eventfinder.app.data.cloud.CloudSyncManager
 import com.eventfinder.app.data.local.DatabaseTransactionHelper
 import com.eventfinder.app.data.local.EventDao
 import com.eventfinder.app.data.local.EventEntity
@@ -11,12 +12,15 @@ import com.eventfinder.app.domain.model.Event
 import com.eventfinder.app.domain.model.EventCategory
 import com.eventfinder.app.domain.model.RsvpStatus
 import com.eventfinder.app.utils.AppLogger
+import com.eventfinder.app.utils.SouthAfricanPlaces
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 /** Sentinel stored in [NewEventDraft.imageUrl] to indicate the image was removed. */
 const val IMAGE_REMOVED = "\u0000IMAGE_REMOVED"
@@ -34,18 +38,23 @@ data class NewEventDraft(
     val longitude: Double?,
     val isPublic: Boolean,
     /** null = unchanged (edit mode), IMAGE_REMOVED = user removed image, otherwise = new image URL. */
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    /** e.g. "weekly", "fortnightly", "monthly"; null for a one-off event. */
+    val recurrenceRule: String? = null
 )
 
 /**
- * Central event catalogue repository backed by Room. Room is the only
- * authoritative data store. There is no cloud backend.
+ * Central event catalogue repository backed by Room. Room is the offline-first
+ * source of truth; user-created events, favourites and RSVPs are additionally
+ * mirrored to Cloud Firestore via [CloudSyncManager] when connectivity allows.
  */
 interface EventRepository {
     fun observeAllEvents(): Flow<List<Event>>
     fun observeFavoriteEvents(): Flow<List<Event>>
     fun observeFavoriteIds(): Flow<Set<String>>
     fun observeRsvpStatuses(): Flow<Map<String, RsvpStatus>>
+    fun observeEventsNearMe(lat: Double, lng: Double, radiusKm: Int): Flow<List<Event>>
+    fun observeTrendingEvents(): Flow<List<Event>>
     suspend fun ensureSeeded()
     suspend fun toggleFavorite(eventId: String): Boolean
     suspend fun setRsvp(eventId: String, status: RsvpStatus)
@@ -53,7 +62,13 @@ interface EventRepository {
     suspend fun updateEvent(eventId: String, draft: NewEventDraft): Result<Unit>
     suspend fun deleteEvent(eventId: String): Result<Unit>
     suspend fun getEvent(eventId: String): Event?
-    suspend fun clearLocalCache()
+
+    /**
+     * Clears non-user-created events and reseeds the sample catalogue.
+     * Returns the number of active RSVPs that blocked the clear (0 = cleared).
+     */
+    suspend fun clearLocalCache(): Int
+    suspend fun expireStaleEvents(): Int
 }
 
 class EventRepositoryImpl(
@@ -62,7 +77,9 @@ class EventRepositoryImpl(
     private val favoriteDao: FavoriteDao,
     private val rsvpDao: RsvpDao,
     private val preferences: SessionProvider,
-    private val context: android.content.Context? = null
+    private val context: android.content.Context? = null,
+    private val cloudSyncManager: CloudSyncManager? = null,
+    private val apiClient: com.eventfinder.app.data.remote.EventFinderApiClient? = null
 ) : EventRepository {
 
     private val tag = "EventRepository"
@@ -76,9 +93,47 @@ class EventRepositoryImpl(
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeAllEvents(): Flow<List<Event>> =
-        eventDao.observeAll().map { rows -> rows.map { it.toDomain() } }
+        preferences.sessionUserId.flatMapLatest { userId ->
+            eventDao.observeAll().map { rows ->
+                rows
+                    .filter { event ->
+                        event.isPublic ||
+                            (!userId.isNullOrBlank() && event.organizerId == userId)
+                    }
+                    .map { it.toDomain() }
+            }
+        }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun observeEventsNearMe(lat: Double, lng: Double, radiusKm: Int): Flow<List<Event>> =
+        preferences.sessionUserId.flatMapLatest { userId ->
+            eventDao.observeAll().map { rows ->
+                rows.filter { event ->
+                        (event.isPublic || (!userId.isNullOrBlank() && event.organizerId == userId)) &&
+                        event.latitude != null && event.longitude != null &&
+                        com.eventfinder.app.utils.DistanceCalculator.between(
+                            lat, lng, event.latitude, event.longitude
+                        ) <= radiusKm
+                    }.map { it.toDomain() }
+            }
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun observeTrendingEvents(): Flow<List<Event>> =
+        preferences.sessionUserId.flatMapLatest { userId ->
+            eventDao.observeAll().map { rows ->
+                val now = System.currentTimeMillis()
+                rows.filter { event ->
+                        (event.isPublic || (!userId.isNullOrBlank() && event.organizerId == userId)) &&
+                        event.startDate >= now &&
+                        event.startDate <= now + (7 * 24 * 60 * 60 * 1000L) // Next 7 days
+                    }.sortedByDescending { it.attendeeCount }
+                     .take(20)
+                     .map { it.toDomain() }
+            }
+        }
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeFavoriteIds(): Flow<Set<String>> =
         preferences.sessionUserId.flatMapLatest { userId ->
@@ -111,18 +166,14 @@ class EventRepositoryImpl(
             }
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
 override suspend fun ensureSeeded() {
     val now = System.currentTimeMillis()
     val upcomingSamples = eventDao.countUpcomingSampleEvents(now)
+    val seed = SampleEventsProvider.johannesburgAndCapeTown()
 
     if (upcomingSamples == 0) {
         eventDao.deleteSampleEvents()
-
-        val seed = SampleEventsProvider.johannesburgAndCapeTown()
-
-        eventDao.upsertAll(
-            seed.map { it.toEntity(isCreatedByUser = false) }
-        )
 
         AppLogger.i(
             tag,
@@ -134,6 +185,13 @@ override suspend fun ensureSeeded() {
             "Upcoming sample catalogue already contains $upcomingSamples events"
         )
     }
+
+    // Always upsert: rows written by an older build keep their old cover art
+    // otherwise (the picturesum placeholders survived for weeks this way), and
+    // REPLACE also rolls the demo dates forward so they stay upcoming.
+    eventDao.upsertAll(
+        seed.map { it.toEntity(isCreatedByUser = false) }
+    )
 }
 
     override suspend fun toggleFavorite(eventId: String): Boolean {
@@ -149,6 +207,12 @@ override suspend fun ensureSeeded() {
 
         database.setFavoriteAtomically(userId, eventId, newValue)
         AppLogger.i(tag, "${if (newValue) "Added" else "Removed"} favourite: $eventId")
+        // Mirror the change to Firestore (fire-and-forget; retried on reconnect).
+        cloudSyncManager?.let { sync ->
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                runCatching { sync.pushFavorite(userId, eventId, newValue) }
+            }
+        }
         return newValue
     }
 
@@ -161,19 +225,67 @@ override suspend fun ensureSeeded() {
         }
         database.setRsvpAtomically(userId, eventId, status.storage)
         AppLogger.i(tag, "RSVP updated for $eventId -> ${status.storage}")
+        cloudSyncManager?.let { sync ->
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                runCatching { sync.pushRsvp(userId, eventId, status.storage) }
+            }
+        }
+        // Mirror to the backend so multi-user attendee lists stay current.
+        pushRsvpToApi(eventId, status.storage)
+    }
+
+    private fun pushRsvpToApi(eventId: String, status: String) {
+        val client = apiClient ?: return
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            val token = preferences.authToken.firstOrNull() ?: return@launch
+            val bearer = "Bearer $token"
+            if (status.isBlank() || status == "none") {
+                runCatching { client.cancelRsvp(bearer, eventId) }
+            } else {
+                runCatching { client.rsvp(bearer, eventId, status) }
+            }.onFailure { AppLogger.w(tag, "API RSVP push failed: ${it.message}") }
+        }
     }
 
     override suspend fun createEvent(draft: NewEventDraft): Result<String> {
         val userId = preferences.sessionUserId.first()
             ?: return Result.failure(IllegalStateException("not_logged_in"))
 
-        val id = java.util.UUID.randomUUID().toString()
         // Normalize IMAGE_REMOVED to null for new events (there's no previous image to remove)
         val imageUrl = when (draft.imageUrl) {
             null -> null
             IMAGE_REMOVED -> null
             else -> draft.imageUrl
         }
+
+        // Prefer a server-generated identifier when the backend is reachable.
+        var id = java.util.UUID.randomUUID().toString()
+        val token = preferences.authToken.firstOrNull()
+        if (apiClient != null && !token.isNullOrBlank()) {
+            // Coordinates are resolved by the create wizard (device position or
+            // the configured default city). The nation-wide fallback is only
+            // used when even that is missing, so an event is never pinned to
+            // a city the user is not in.
+            val fallback = SouthAfricanPlaces.nationalDefault
+            val body = com.eventfinder.app.data.remote.EventFinderApiClient.eventBody(
+                title = draft.title.trim(),
+                description = draft.description.trim(),
+                venueName = draft.venueName.trim(),
+                address = draft.address.trim(),
+                city = "",
+                latitude = draft.latitude ?: fallback.latitude,
+                longitude = draft.longitude ?: fallback.longitude,
+                startUtcMillis = draft.startDate,
+                endUtcMillis = draft.endDate,
+                category = draft.category.labelKey,
+                imageUrl = imageUrl,
+                isPublic = draft.isPublic
+            )
+            apiClient.createEvent("Bearer $token", body)
+                .onSuccess { remote -> id = remote.id }
+                .onFailure { AppLogger.w(tag, "API create failed - using local id: ${it.message}") }
+        }
+
         val entity = EventEntity(
             id = id,
             title = draft.title.trim(),
@@ -190,10 +302,19 @@ override suspend fun ensureSeeded() {
             organizerId = userId,
             organizerName = "You",
             attendeeCount = 0,
-            isCreatedByUser = true
+            isCreatedByUser = true,
+            isRecurring = !draft.recurrenceRule.isNullOrBlank(),
+            recurrenceRule = draft.recurrenceRule?.takeIf { it.isNotBlank() },
+            version = 1,
+            updatedAt = System.currentTimeMillis()
         )
         database.createEventAtomically(entity)
         AppLogger.i(tag, "Community event created locally: $id")
+        cloudSyncManager?.let { sync ->
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                runCatching { sync.pushEvent(entity) }
+            }
+        }
         return Result.success(id)
     }
 
@@ -228,10 +349,43 @@ override suspend fun ensureSeeded() {
             latitude = draft.latitude,
             longitude = draft.longitude,
             imageUrl = newImageUrl,
-            isPublic = draft.isPublic
+            isPublic = draft.isPublic,
+            isRecurring = !draft.recurrenceRule.isNullOrBlank(),
+            recurrenceRule = draft.recurrenceRule?.takeIf { it.isNotBlank() },
+            // Conflict resolution: every local edit advances the version and
+            // stamps updatedAt so a stale cloud copy cannot overwrite it.
+            version = existing.version + 1,
+            updatedAt = System.currentTimeMillis()
         )
         database.updateEventAtomically(updated)
         AppLogger.i(tag, "Community event updated locally: $eventId")
+        cloudSyncManager?.let { sync ->
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                runCatching { sync.pushEvent(updated) }
+            }
+        }
+        // Best-effort mirror to the backend (owner-guarded server-side).
+        apiClient?.let { client ->
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                val token = preferences.authToken.firstOrNull() ?: return@launch
+                val body = com.eventfinder.app.data.remote.EventFinderApiClient.eventBody(
+                    title = updated.title,
+                    description = updated.description,
+                    venueName = updated.venueName,
+                    address = updated.address,
+                    city = "",
+                    latitude = updated.latitude ?: 0.0,
+                    longitude = updated.longitude ?: 0.0,
+                    startUtcMillis = updated.startDate,
+                    endUtcMillis = updated.endDate,
+                    category = updated.category,
+                    imageUrl = updated.imageUrl,
+                    isPublic = updated.isPublic
+                )
+                runCatching { client.updateEvent("Bearer $token", eventId, body) }
+                    .onFailure { AppLogger.w(tag, "API update push failed: ${it.message}") }
+            }
+        }
         return Result.success(Unit)
     }
 
@@ -251,24 +405,46 @@ override suspend fun ensureSeeded() {
         context?.let { com.eventfinder.app.notifications.NotificationHelper.cancelEventReminders(it, eventId) }
         database.deleteEventAtomically(eventId)
         AppLogger.i(tag, "Community event deleted locally: $eventId")
+        cloudSyncManager?.let { sync ->
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                runCatching { sync.deleteEventFromCloud(eventId) }
+            }
+        }
+        apiClient?.let { client ->
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                val token = preferences.authToken.firstOrNull() ?: return@launch
+                runCatching { client.deleteEvent("Bearer $token", eventId) }
+                    .onFailure { AppLogger.w(tag, "API delete push failed: ${it.message}") }
+            }
+        }
         return Result.success(Unit)
     }
 
     override suspend fun getEvent(eventId: String): Event? =
         eventDao.findById(eventId)?.toDomain()
 
-    override suspend fun clearLocalCache() {
+    override suspend fun clearLocalCache(): Int {
         val userId = preferences.sessionUserId.first()
 
         val activeRsvps = userId?.let { rsvpDao.attendingCountForUser(it) } ?: 0
         if (activeRsvps > 0) {
             AppLogger.w(tag, "Skipping cache clear because user has active RSVPs")
-            return
+            return activeRsvps
         }
 
         eventDao.clearNonUserCreatedAtomically()
         ensureSeeded()
         AppLogger.i(tag, "External/local catalogue cache cleared and seed data restored")
+        return 0
+    }
+
+    override suspend fun expireStaleEvents(): Int {
+        val cutoff = System.currentTimeMillis() - (7L * 24L * 60L * 60L * 1000L)
+        val removed = eventDao.deleteStale(cutoff)
+        if (removed > 0) {
+            AppLogger.i(tag, "Expired $removed stale cached event(s) older than 7 days")
+        }
+        return removed
     }
 
     private fun Event.toEntity(isCreatedByUser: Boolean): EventEntity =
@@ -288,6 +464,18 @@ override suspend fun ensureSeeded() {
             organizerId = organizerId,
             organizerName = organizerName,
             attendeeCount = attendeeCount,
-            isCreatedByUser = isCreatedByUser
+            isCreatedByUser = isCreatedByUser,
+            wheelchairAccessible = wheelchairAccessible,
+            loudMusic = loudMusic,
+            sensoryFriendly = sensoryFriendly,
+            strobeLights = strobeLights,
+            provenance = provenance,
+            ageRestricted = ageRestricted,
+            isRecurring = isRecurring,
+            recurrenceRule = recurrenceRule,
+            parentEventId = parentEventId,
+            collectionId = collectionId,
+            version = version,
+            updatedAt = updatedAt
         )
 }

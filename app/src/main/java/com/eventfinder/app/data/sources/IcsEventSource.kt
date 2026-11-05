@@ -1,6 +1,7 @@
 package com.eventfinder.app.data.sources
 
 import com.eventfinder.app.data.remote.model.RemoteEvent
+import com.eventfinder.app.domain.model.EventCategory
 import com.eventfinder.app.utils.AppLogger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -118,10 +119,12 @@ class IcsEventSource(
             }
 
             val uid = props["UID"]?.trim() ?: continue
-            val summary = props["SUMMARY"]?.let { unescapeIcsText(it) }?.trim() ?: continue
-            val description = props["DESCRIPTION"]?.let { unescapeIcsText(it) }?.trim()?.take(2000) ?: ""
-            val location = props["LOCATION"]?.let { unescapeIcsText(it) }?.trim() ?: ""
-            val categories = props["CATEGORIES"]?.let { unescapeIcsText(it) }?.trim() ?: ""
+            // RFC 5545 text escaping: feeds write "CERES\, WC" and "FESTIVAL\; MUSIC"
+            // literally, and un-unescaped text leaks backslashes into the UI.
+            val summary = unescapeIcsText(props["SUMMARY"]?.trim()) ?: continue
+            val description = unescapeIcsText(props["DESCRIPTION"]?.trim())?.take(2000) ?: ""
+            val location = unescapeIcsText(props["LOCATION"]?.trim()) ?: ""
+            val categories = unescapeIcsText(props["CATEGORIES"]?.trim()) ?: ""
             val urlProp = props["URL"]?.trim()
 
             val dtStartRaw = props["DTSTART"]?.trim() ?: continue
@@ -147,6 +150,7 @@ class IcsEventSource(
 
             val venueName = location.ifBlank { summary }
             val address = location
+
             val duration = if (endDate != null && endDate > startDate) endDate - startDate else 3 * 60 * 60 * 1000L
 
             if (rrule != null) {
@@ -163,7 +167,7 @@ class IcsEventSource(
                             sourceId = occSourceId,
                             title = summary,
                             description = description,
-                            category = categories.ifBlank { "OTHER" },
+                            category = resolvedCategory(categories, summary, description),
                             startDate = occurrence,
                             endDate = occurrence + duration,
                             venueName = venueName,
@@ -185,7 +189,7 @@ class IcsEventSource(
                         sourceId = uid,
                         title = summary,
                         description = description,
-                        category = categories.ifBlank { "OTHER" },
+                        category = resolvedCategory(categories, summary, description),
                         startDate = startDate,
                         endDate = startDate + duration,
                         venueName = venueName,
@@ -201,6 +205,20 @@ class IcsEventSource(
         }
 
         return events
+    }
+
+    /**
+     * Uses the feed's own category when it has one, otherwise infers it from the
+     * event text so ICS imports are not all dumped into "Other".
+     */
+    private fun resolvedCategory(categories: String, title: String, description: String): String {
+        val raw = categories.trim()
+        if (raw.isNotBlank() && raw.equals("OTHER", ignoreCase = true).not() &&
+            raw.equals("all_categories", ignoreCase = true).not()
+        ) {
+            return raw
+        }
+        return EventCategory.inferFromText("$title $description").labelKey
     }
 
     private fun expandRrule(startMillis: Long, rrule: String, exdates: Set<Long>): List<Long> {
@@ -347,6 +365,20 @@ class IcsEventSource(
         return params
     }
 
+    /**
+     * Decodes RFC 5545 TEXT escapes (`\n`, `\N`, `\,`, `\;`, `\\`) so stored
+     * titles, venues and addresses never surface raw backslashes in the UI
+     * ("CERES\, WC" must display as "CERES, WC").
+     */
+    private fun unescapeIcsText(raw: String?): String? = raw?.replace(
+        Regex("""\\([\\,;nN])""")
+    ) { match ->
+        when (val ch = match.groupValues[1]) {
+            "n", "N" -> "\n"
+            else -> ch
+        }
+    }
+
     private fun parseIcsDateFlexible(raw: String, params: Map<String, String> = emptyMap()): Long? {
         val cleaned = raw.trim()
         if (cleaned.isBlank()) return null
@@ -400,31 +432,6 @@ class IcsEventSource(
         }
 
         return null
-    }
-
-    /**
-     * Reverses the text escaping defined by RFC 5545 section 3.3.11. ICS feeds
-     * escape commas, semicolons and backslashes inside TEXT values, so a venue
-     * arrives as "TBA\, KZN" and must be restored to "TBA, KZN" before it is
-     * shown to the user or handed to the geocoder.
-     */
-    private fun unescapeIcsText(value: String): String {
-        val sb = StringBuilder(value.length)
-        var i = 0
-        while (i < value.length) {
-            val c = value[i]
-            if (c == '\\' && i + 1 < value.length) {
-                when (val next = value[i + 1]) {
-                    'n', 'N' -> sb.append('\n')
-                    else -> sb.append(next)
-                }
-                i += 2
-            } else {
-                sb.append(c)
-                i++
-            }
-        }
-        return sb.toString()
     }
 
     private fun unfoldIcs(text: String): String {

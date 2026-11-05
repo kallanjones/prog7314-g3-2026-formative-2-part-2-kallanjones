@@ -1,6 +1,9 @@
-package com.eventfinder.app.ui.components
+﻿package com.eventfinder.app.ui.components
 
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,23 +31,37 @@ import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.eventfinder.app.R
@@ -101,11 +118,11 @@ fun EmptyState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(
-            imageVector = icon,
+        // Brand-coloured illustration instead of a bare glyph (FR-04).
+        Image(
+            painter = painterResource(R.drawable.img_empty_state),
             contentDescription = null,
-            modifier = Modifier.size(56.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
+            modifier = Modifier.size(140.dp)
         )
         Spacer(Modifier.height(12.dp))
         Text(
@@ -125,6 +142,58 @@ fun EmptyState(
     }
 }
 
+/**
+ * Interactive category chip: a full-colour PNG icon that springs when tapped and
+ * a chip container that flips to brand green with a white label while selected.
+ */
+@Composable
+fun PngCategoryChip(
+    selected: Boolean,
+    onClick: () -> Unit,
+    label: String,
+    @DrawableRes iconRes: Int,
+    modifier: Modifier = Modifier
+) {
+    val container by androidx.compose.animation.animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+        label = "chipContainer"
+    )
+    val borderColor by androidx.compose.animation.animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.primary
+        else MaterialTheme.colorScheme.outlineVariant,
+        label = "chipBorder"
+    )
+
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(container)
+            .border(
+                width = 1.dp,
+                color = borderColor,
+                shape = RoundedCornerShape(12.dp)
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        InteractivePngIcon(
+            iconRes,
+            contentDescription = null,
+            active = selected,
+            size = 18.dp
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            color = if (selected) MaterialTheme.colorScheme.onPrimary
+            else MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
 /** Horizontal scrolling category chips (Screen 4 of the design). */
 @Composable
 fun CategoryChips(
@@ -138,18 +207,19 @@ fun CategoryChips(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {
-            FilterChip(
+            PngCategoryChip(
                 selected = selected == null,
                 onClick = { onSelect(null) },
-                label = { Text(stringResource(R.string.all_categories)) },
-                leadingIcon = { Icon(Icons.Outlined.Category, contentDescription = null) }
+                label = stringResource(R.string.all_categories),
+                iconRes = R.drawable.cat_all
             )
         }
         items(EventCategory.entries.filter { it != EventCategory.OTHER }) { category ->
-            FilterChip(
+            PngCategoryChip(
                 selected = selected == category,
                 onClick = { onSelect(if (selected == category) null else category) },
-                label = { Text(stringResource(categoryLabel(category))) }
+                label = stringResource(categoryLabel(category)),
+                iconRes = categoryPngIcon(category)
             )
         }
     }
@@ -158,11 +228,29 @@ fun CategoryChips(
 /** Maps a category to its localized label resource. */
 fun categoryLabel(category: EventCategory): Int = when (category) {
     EventCategory.MUSIC -> R.string.cat_music
-    EventCategory.SPORTS -> R.string.cat_sports
+    EventCategory.CONCERTS -> R.string.cat_concerts
+    EventCategory.FESTIVALS -> R.string.cat_festivals
+    EventCategory.NIGHTLIFE -> R.string.cat_nightlife
     EventCategory.FOOD -> R.string.cat_food
+    EventCategory.SPORTS -> R.string.cat_sports
     EventCategory.ARTS -> R.string.cat_arts
-    EventCategory.COMMUNITY -> R.string.cat_community
+    EventCategory.COMEDY -> R.string.cat_comedy
     EventCategory.BUSINESS -> R.string.cat_business
+    EventCategory.NETWORKING -> R.string.cat_networking
+    EventCategory.TECHNOLOGY -> R.string.cat_technology
+    EventCategory.EDUCATION -> R.string.cat_education
+    EventCategory.FAMILY -> R.string.cat_family
+    EventCategory.MARKETS -> R.string.cat_markets
+    EventCategory.OUTDOORS -> R.string.cat_outdoors
+    EventCategory.TRAVEL -> R.string.cat_travel
+    EventCategory.CHARITY -> R.string.cat_charity
+    EventCategory.THEATRE -> R.string.cat_theatre
+    EventCategory.MOVIES -> R.string.cat_movies
+    EventCategory.FASHION -> R.string.cat_fashion
+    EventCategory.CARS -> R.string.cat_cars
+    EventCategory.WELLNESS -> R.string.cat_wellness
+    EventCategory.RELIGION -> R.string.cat_religion
+    EventCategory.COMMUNITY -> R.string.cat_community
     EventCategory.OTHER -> R.string.all_categories
 }
 
@@ -226,100 +314,168 @@ fun EventCard(
     modifier: Modifier = Modifier
 ) {
     val event = view.event
+    val haptic = LocalHapticFeedback.current
+
     Card(
-        modifier = modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 1.dp
+        )
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            EventImage(
-                imageUrl = event.imageUrl,
-                contentDescription = stringResource(R.string.event_image),
+            AsyncImage(
+                model = event.imageUrl,
+                contentDescription = "${stringResource(R.string.event_image)}: ${event.title}",
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(R.drawable.ic_image_placeholder),
+                error = painterResource(R.drawable.ic_image_placeholder),
                 modifier = Modifier
-                    .size(88.dp)
-                    .clip(RoundedCornerShape(14.dp))
+                    .size(width = 108.dp, height = 112.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
             )
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
+
+            Spacer(Modifier.width(14.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
                 Text(
-                    event.title,
+                    text = event.category.name.lowercase()
+                        .replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(Modifier.height(4.dp))
+
+                Text(
+                    text = event.title,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Outlined.CalendarMonth,
+
+                Spacer(Modifier.height(8.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.evt_calendar),
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        modifier = Modifier.size(15.dp)
                     )
-                    Spacer(Modifier.width(4.dp))
+
+                    Spacer(Modifier.width(5.dp))
+
                     Text(
-                        DateTimeUtils.formatShortDate(event.startDate),
-                        style = MaterialTheme.typography.bodySmall
+                        text = DateTimeUtils.formatShortDate(event.startDate),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
                     )
                 }
-                Spacer(Modifier.height(2.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Outlined.LocationOn,
+
+                Spacer(Modifier.height(4.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.evt_venue),
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        modifier = Modifier.size(15.dp)
                     )
-                    Spacer(Modifier.width(4.dp))
+
+                    Spacer(Modifier.width(5.dp))
+
                     Text(
-                        event.venueName,
+                        text = event.venueName,
                         style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                if (view.distanceKm != null) {
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        "${com.eventfinder.app.utils.DistanceCalculator.displayDistanceKm(view.distanceKm)} km " +
-                            stringResource(R.string.distance_away),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    stringResource(categoryLabel(event.category)),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier
-                        .background(
-                            MaterialTheme.colorScheme.secondaryContainer,
-                            RoundedCornerShape(6.dp)
-                        )
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                )
             }
+
             if (onFavoriteToggle != null) {
-                Spacer(Modifier.width(8.dp))
                 Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clickable { onFavoriteToggle() },
+                    modifier = Modifier.size(44.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        if (event.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                        contentDescription = stringResource(
-                            if (event.isFavorite) R.string.favorite_remove else R.string.favorite_add
-                        ),
-                        tint = if (event.isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                    FavoritePngIcon(
+                        isFavorite = view.isFavorite,
+                        size = 26.dp,
+                        onToggle = {
+                            haptic.performHapticFeedback(
+                                HapticFeedbackType.TextHandleMove
+                            )
+                            onFavoriteToggle()
+                        }
                     )
                 }
             }
         }
     }
 }
+
+/**
+ * True when Settings → Accessibility → Reduced motion is on. Components read
+ * this instead of animating unconditionally: it respects the user's motion
+ * preference and removes continuous animation work on low-RAM devices.
+ */
+val LocalReducedMotion = staticCompositionLocalOf { false }
+
+/** Shimmer placeholder used for skeleton loading states. */
+@Composable
+fun ShimmerBox(modifier: Modifier = Modifier) {
+    // A static block instead of an endless shimmer when motion is reduced.
+    if (LocalReducedMotion.current) {
+        Box(
+            modifier = modifier.background(
+                MaterialTheme.colorScheme.surfaceVariant,
+                RoundedCornerShape(8.dp)
+            )
+        )
+        return
+    }
+
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val x = transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmerX"
+    ).value
+    val brush = Brush.linearGradient(
+        colors = listOf(
+            MaterialTheme.colorScheme.surfaceVariant,
+            MaterialTheme.colorScheme.surface,
+            MaterialTheme.colorScheme.surfaceVariant
+        ),
+        start = Offset(x - 200f, 0f),
+        end = Offset(x, 0f)
+    )
+    Box(modifier = modifier.background(brush, RoundedCornerShape(8.dp)))
+}
+
+
+
+
+

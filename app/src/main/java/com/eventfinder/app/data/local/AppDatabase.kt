@@ -171,16 +171,177 @@ private val MIGRATION_6_7 = object : Migration(6, 7) {
     }
 }
 
- @Database(
+private val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE users ADD COLUMN serverBacked INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+private val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE users ADD COLUMN avatarType TEXT NOT NULL DEFAULT 'initials'")
+    }
+}
+
+private val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS event_reviews (" +
+                "eventId TEXT NOT NULL, userId TEXT NOT NULL, rating INTEGER NOT NULL, " +
+                "comment TEXT NOT NULL, authorName TEXT NOT NULL, createdAt INTEGER NOT NULL, " +
+                "PRIMARY KEY(eventId, userId))"
+        )
+    }
+}
+
+private val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE events ADD COLUMN sourceUrl TEXT")
+        db.execSQL("ALTER TABLE events ADD COLUMN maxAttendees INTEGER")
+    }
+}
+
+private val MIGRATION_11_12 = object : Migration(11, 12) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE users ADD COLUMN avatarUrl TEXT")
+        db.execSQL("ALTER TABLE users ADD COLUMN avatarImageUrl TEXT")
+    }
+}
+
+private val MIGRATION_12_13 = object : Migration(12, 13) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE users ADD COLUMN isVerified INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE users ADD COLUMN trustScore REAL NOT NULL DEFAULT 0.0")
+    }
+}
+
+private val MIGRATION_13_14 = object : Migration(13, 14) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS group_plans " +
+            "(id TEXT NOT NULL, eventId TEXT NOT NULL, creatorId TEXT NOT NULL, " +
+            "members TEXT NOT NULL, meetingPointLabel TEXT, meetingLat REAL, " +
+            "meetingLng REAL, proposedTime INTEGER, createdAt INTEGER NOT NULL, " +
+            "PRIMARY KEY(id))"
+        )
+    }
+}
+
+private val MIGRATION_14_15 = object : Migration(14, 15) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS tickets " +
+            "(id TEXT NOT NULL, eventId TEXT NOT NULL, userId TEXT NOT NULL, " +
+            "ticketCode TEXT NOT NULL, issuedAt INTEGER NOT NULL, checkedInAt INTEGER, " +
+            "PRIMARY KEY(id))"
+        )
+    }
+}
+
+private val MIGRATION_15_16 = object : Migration(15, 16) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE events ADD COLUMN wheelchairAccessible INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE events ADD COLUMN loudMusic INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE events ADD COLUMN sensoryFriendly INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE events ADD COLUMN strobeLights INTEGER NOT NULL DEFAULT 0")
+        // Recreate users table to add new columns (ALTER TABLE ADD COLUMN with
+        // NOT NULL + DEFAULT can be unreliable across SQLite versions).
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS users_new (" +
+            "id TEXT NOT NULL PRIMARY KEY, fullName TEXT NOT NULL, email TEXT NOT NULL, " +
+            "passwordHash TEXT NOT NULL, preferredLanguage TEXT NOT NULL, defaultCity TEXT NOT NULL, " +
+            "defaultRadiusKm INTEGER NOT NULL, biometricEnabled INTEGER NOT NULL, createdAt INTEGER NOT NULL, " +
+            "serverBacked INTEGER NOT NULL DEFAULT 0, avatarType TEXT NOT NULL DEFAULT 'initials', " +
+            "avatarUrl TEXT, avatarImageUrl TEXT, isVerified INTEGER NOT NULL DEFAULT 0, " +
+            "trustScore REAL NOT NULL DEFAULT 0.0, commuteTimeMinutes INTEGER NOT NULL DEFAULT 30, " +
+            "preferredCategories TEXT NOT NULL DEFAULT '', skipReminders INTEGER NOT NULL DEFAULT 0, " +
+            "accessibilityNeeds TEXT NOT NULL DEFAULT '')"
+        )
+        db.execSQL(
+            "INSERT INTO users_new (id, fullName, email, passwordHash, preferredLanguage, defaultCity, " +
+            "defaultRadiusKm, biometricEnabled, createdAt, serverBacked, avatarType, avatarUrl, " +
+            "avatarImageUrl, isVerified, trustScore, commuteTimeMinutes, preferredCategories, " +
+            "skipReminders, accessibilityNeeds) " +
+            "SELECT id, fullName, email, passwordHash, preferredLanguage, defaultCity, defaultRadiusKm, " +
+            "biometricEnabled, createdAt, serverBacked, avatarType, avatarUrl, avatarImageUrl, " +
+            "isVerified, trustScore, 30, '', 0, '' FROM users"
+        )
+        db.execSQL("DROP TABLE users")
+        db.execSQL("ALTER TABLE users_new RENAME TO users")
+    }
+}
+
+private val MIGRATION_16_17 = object : Migration(16, 17) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE event_reviews ADD COLUMN verifiedAttendance INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+private val MIGRATION_17_18 = object : Migration(17, 18) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE events ADD COLUMN provenance TEXT NOT NULL DEFAULT 'live'")
+        db.execSQL("ALTER TABLE events ADD COLUMN ageRestricted INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE events ADD COLUMN isRecurring INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE events ADD COLUMN recurrenceRule TEXT")
+        db.execSQL("ALTER TABLE events ADD COLUMN parentEventId TEXT")
+        db.execSQL("ALTER TABLE events ADD COLUMN collectionId TEXT")
+    }
+}
+
+private val MIGRATION_18_19 = object : Migration(18, 19) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS reports " +
+            "(id TEXT NOT NULL, reporterId TEXT NOT NULL, targetType TEXT NOT NULL, " +
+            "targetId TEXT NOT NULL, reason TEXT NOT NULL, createdAt INTEGER NOT NULL, " +
+            "resolved INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(id))"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS blocked_users " +
+            "(userId TEXT NOT NULL, blockedUserId TEXT NOT NULL, createdAt INTEGER NOT NULL, " +
+            "PRIMARY KEY(userId, blockedUserId))"
+        )
+    }
+}
+
+private val MIGRATION_19_20 = object : Migration(19, 20) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE events ADD COLUMN version INTEGER NOT NULL DEFAULT 1")
+        db.execSQL("ALTER TABLE events ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS event_drafts " +
+            "(id TEXT NOT NULL, userId TEXT NOT NULL, title TEXT NOT NULL, " +
+            "description TEXT NOT NULL, category TEXT NOT NULL, venueName TEXT NOT NULL, " +
+            "address TEXT NOT NULL, latitude REAL, longitude REAL, imageUrl TEXT, " +
+            "startDate INTEGER NOT NULL, endDate INTEGER NOT NULL, savedAt INTEGER NOT NULL, " +
+            "PRIMARY KEY(id))"
+        )
+    }
+}
+
+private val MIGRATION_20_21 = object : Migration(20, 21) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Verified attendee review photos (comma-separated remote URLs).
+        db.execSQL("ALTER TABLE event_reviews ADD COLUMN photoUrls TEXT NOT NULL DEFAULT ''")
+    }
+}
+
+  @Database(
     entities = [
         UserEntity::class,
         EventEntity::class,
         FavoriteEntity::class,
         RsvpEntity::class,
         SourceSyncEntity::class,
-        GeocodeCacheEntity::class
+        GeocodeCacheEntity::class,
+        EventReviewEntity::class,
+        GroupPlanEntity::class,
+        TicketEntity::class,
+        ReportEntity::class,
+        BlockedUserEntity::class,
+        DraftEntity::class
     ],
-    version = 7,
+    version = 21,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase(), DatabaseTransactionHelper {
@@ -190,6 +351,13 @@ abstract class AppDatabase : RoomDatabase(), DatabaseTransactionHelper {
     abstract fun favoriteDao(): FavoriteDao
     abstract fun rsvpDao(): RsvpDao
     abstract fun geocodeCacheDao(): GeocodeCacheDao
+    abstract fun eventReviewDao(): EventReviewDao
+    abstract fun groupPlanDao(): GroupPlanDao
+    abstract fun ticketDao(): TicketDao
+    abstract fun reportDao(): ReportDao
+    abstract fun draftDao(): DraftDao
+
+
 
     @Transaction
     override suspend fun setFavoriteAtomically(userId: String, eventId: String, favorite: Boolean) {
@@ -243,8 +411,8 @@ abstract class AppDatabase : RoomDatabase(), DatabaseTransactionHelper {
                 AppDatabase::class.java,
                 DB_NAME
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
-                .build()
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21)
+                                .build()
     }
 }
 
@@ -257,7 +425,14 @@ fun UserEntity.toDomain(): User = User(
     defaultCity = defaultCity,
     defaultRadiusKm = defaultRadiusKm,
     biometricEnabled = biometricEnabled,
-    createdAt = createdAt
+    createdAt = createdAt,
+    avatarType = avatarType,
+    avatarUrl = avatarUrl,
+    avatarImageUrl = avatarImageUrl,
+    commuteTimeMinutes = commuteTimeMinutes,
+    preferredCategories = preferredCategories,
+    skipReminders = skipReminders,
+    accessibilityNeeds = accessibilityNeeds
 )
 
 /** Maps a Room event row onto the immutable domain model. */
@@ -274,10 +449,24 @@ fun EventEntity.toDomain(): com.eventfinder.app.domain.model.Event =
         latitude = latitude,
         longitude = longitude,
         imageUrl = imageUrl,
+        sourceUrl = sourceUrl,
+        maxAttendees = maxAttendees,
         isPublic = isPublic,
         organizerId = organizerId,
         organizerName = organizerName,
         attendeeCount = attendeeCount,
         isFavorite = false,
-        isCreatedByUser = isCreatedByUser
+        isCreatedByUser = isCreatedByUser,
+        wheelchairAccessible = wheelchairAccessible,
+        loudMusic = loudMusic,
+        sensoryFriendly = sensoryFriendly,
+        strobeLights = strobeLights,
+        provenance = provenance,
+        ageRestricted = ageRestricted,
+        isRecurring = isRecurring,
+        recurrenceRule = recurrenceRule,
+        parentEventId = parentEventId,
+        collectionId = collectionId,
+        version = version,
+        updatedAt = updatedAt
     )

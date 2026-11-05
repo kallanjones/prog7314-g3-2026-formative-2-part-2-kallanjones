@@ -1,6 +1,5 @@
 package com.eventfinder.app.data.remote
 
-import com.eventfinder.app.BuildConfig
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import okhttp3.Cache
@@ -85,17 +84,6 @@ object ApiClient {
             OSM_OVERPASS_FALLBACK_URL,
             cacheDir
         ).create(OpenStreetMapApi::class.java)
-
-    /**
-     * Our own EventFinder REST API (the ASP.NET Core service in `/api`).
-     * The base URL comes from BuildConfig so debug builds talk to a locally
-     * running instance and release builds talk to the deployed one.
-     */
-    fun eventFinderApi(cacheDir: File?): EventFinderApi =
-        retrofit(
-            BuildConfig.API_BASE_URL,
-            cacheDir
-        ).create(EventFinderApi::class.java)
 
     fun publicJsonEventClient(cacheDir: File?): PublicJsonEventClient =
         PublicJsonEventClient(

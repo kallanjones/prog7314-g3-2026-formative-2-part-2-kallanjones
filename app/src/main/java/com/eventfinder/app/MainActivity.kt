@@ -8,6 +8,13 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
@@ -45,6 +52,10 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // 2026 baseline: draw behind the system bars and insets-aware
+        // components (TopAppBar/Scaffold) handle the padding.
+        enableEdgeToEdge()
+
 
         val container: AppContainer =
             (application as EventFinderApp).container
@@ -61,11 +72,37 @@ class MainActivity : FragmentActivity() {
 
 
         setContent {
-            EventFinderTheme {
-                EventFinderNavHost(
-                    container = container,
-                    deepLinkEventId = deepLinkEventId
-                )
+            val themeMode by container.preferences.themeMode.collectAsState(initial = "system")
+            val reducedMotion by container.preferences.reducedMotion.collectAsState(initial = false)
+            // Material You is opt-in (Settings): without it the app always uses
+            // the brand-green light scheme and the #0B1929 night scheme.
+            val dynamicColor by container.preferences.dynamicColorEnabled.collectAsState(initial = false)
+            val darkTheme = when (themeMode) {
+                "light" -> false
+                "dark" -> true
+                else -> isSystemInDarkTheme()
+            }
+            // Keep the status/navigation bar icons legible on both schemes:
+            // white icons on the #0B1929 night surface, dark icons on the
+            // near-white light surface.
+            val view = LocalView.current
+            SideEffect {
+                val controller = WindowCompat.getInsetsController(window, view)
+                controller.isAppearanceLightStatusBars = !darkTheme
+                controller.isAppearanceLightNavigationBars = !darkTheme
+            }
+            androidx.compose.runtime.CompositionLocalProvider(
+                com.eventfinder.app.ui.components.LocalReducedMotion provides reducedMotion
+            ) {
+                EventFinderTheme(
+                    darkTheme = darkTheme,
+                    dynamicColor = dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                ) {
+                    EventFinderNavHost(
+                        container = container,
+                        deepLinkEventId = deepLinkEventId
+                    )
+                }
             }
         }
     }

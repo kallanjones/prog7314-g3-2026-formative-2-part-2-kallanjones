@@ -4,10 +4,49 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
+@Entity(tableName = "group_plans")
+data class GroupPlanEntity(
+    @PrimaryKey val id: String,
+    val eventId: String,
+    val creatorId: String,
+    val members: String,
+    val meetingPointLabel: String?,
+    val meetingLat: Double?,
+    val meetingLng: Double?,
+    val proposedTime: Long?,
+    val createdAt: Long
+)
+
 /**
  * Room entity for a registered user.
+
  * The password is stored as a salted PBKDF2 hash.
  */
+/** Cached server review for an event (one row per reviewer). */
+@Entity(
+    tableName = "event_reviews",
+    indices = [Index("eventId")]
+)
+data class CachedReviewEntity(
+    @PrimaryKey val reviewId: String,
+    val eventId: String,
+    val userId: String,
+    val userName: String,
+    val rating: Int,
+    val comment: String?,
+    val isVerifiedAttendee: Boolean,
+    val createdAt: Long,
+    val updatedAt: Long
+)
+
+/** Cached aggregate rating for an event (shown on cards and detail header). */
+@Entity(tableName = "event_review_summaries")
+data class CachedReviewSummaryEntity(
+    @PrimaryKey val eventId: String,
+    val average: Double,
+    val count: Int
+)
+
 @Entity(tableName = "users")
 data class UserEntity(
     @PrimaryKey val id: String,
@@ -18,7 +57,17 @@ data class UserEntity(
     val defaultCity: String,
     val defaultRadiusKm: Int,
     val biometricEnabled: Boolean,
-    val createdAt: Long
+    val createdAt: Long,
+    val serverBacked: Boolean = false,
+    val avatarType: String = "initials",
+    val avatarUrl: String? = null,
+    val avatarImageUrl: String? = null,
+    val isVerified: Boolean = false,
+    val trustScore: Double = 0.0,
+    val commuteTimeMinutes: Int = 30,
+    val preferredCategories: String = "",
+    val skipReminders: Boolean = false,
+    val accessibilityNeeds: String = ""
 )
 
 /**
@@ -41,12 +90,28 @@ data class EventEntity(
     val latitude: Double?,
     val longitude: Double?,
     val imageUrl: String?,
+    /** Externally discovered URL for the event or ticketing page, when available. */
+    val sourceUrl: String? = null,
+    /** Optional RSVP / venue capacity, only when reported by the source. */
+    val maxAttendees: Int? = null,
     /** True = visible in this device's local catalogue. Has no cross-device semantics. */
     val isPublic: Boolean,
     val organizerId: String,
     val organizerName: String,
     val attendeeCount: Int,
-    val isCreatedByUser: Boolean
+    val isCreatedByUser: Boolean,
+    val wheelchairAccessible: Boolean = false,
+    val loudMusic: Boolean = false,
+    val sensoryFriendly: Boolean = false,
+    val strobeLights: Boolean = false,
+    val provenance: String = "live",
+    val ageRestricted: Boolean = false,
+    val isRecurring: Boolean = false,
+    val recurrenceRule: String? = null,
+    val parentEventId: String? = null,
+    val collectionId: String? = null,
+    val version: Int = 1,
+    val updatedAt: Long = 0L
 )
 
 /** Room entity for a favourite link. */
@@ -85,6 +150,16 @@ data class SourceSyncEntity(
     val lastSuccessAt: Long,
     val lastEmptyAt: Long,
     val lastFailedAt: Long
+)
+
+@Entity(tableName = "tickets")
+data class TicketEntity(
+    @PrimaryKey val id: String,
+    val eventId: String,
+    val userId: String,
+    val ticketCode: String,
+    val issuedAt: Long,
+    val checkedInAt: Long?
 )
 
 /**
