@@ -79,8 +79,8 @@ hosted REST API, and the user-defined features.
 
 ## Screenshots
 
-Every screen below was captured from the running app on an Android 14 (API 34)
-emulator at 1080 × 2340.
+Every screen below was captured from the running app on a Pixel 6 emulator running
+Android 15 (API 35) at 1080 × 2400.
 
 | Login | Register | Forgot password | Home (Discover) |
 | :---: | :---: | :---: | :---: |
