@@ -33,6 +33,11 @@ https://youtu.be/8Hr-pQSrUFs
 Covers sign-in including Google SSO, the settings menu, the data round trip against the
 hosted REST API, and the user-defined features.
 
+## Release notes
+
+See [RELEASE_NOTES.md](RELEASE_NOTES.md) for the functional updates made since the
+Part 2 prototype.
+
 ---
 
 ## Table of contents
