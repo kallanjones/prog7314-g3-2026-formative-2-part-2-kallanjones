@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 /** Data access for cached event reviews. */
@@ -57,10 +58,13 @@ interface UserDao {
 @Dao
 interface EventDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    // @Upsert updates an existing row in place. REPLACE deletes and re-inserts it,
+    // which cascades to event_reviews (deleting that event's reviews) and moves
+    // the row behind others with the same startDate, reshuffling the Home feed.
+    @Upsert
     suspend fun upsertAll(events: List<EventEntity>)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsert(event: EventEntity)
 
     @Query("SELECT * FROM events ORDER BY startDate ASC")

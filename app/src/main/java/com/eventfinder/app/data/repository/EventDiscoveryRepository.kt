@@ -47,24 +47,20 @@ class EventDiscoveryRepository(
 
     private suspend fun refreshInternal(): DiscoveryResult {
         val sourceResults = mutableListOf<SourceResult>()
+        var totalInserted = 0
 
+        // Each feed is saved as soon as it is fetched so Home shows real events
+        // straight away. Cover photos are looked up afterwards: that lookup runs
+        // one event at a time and takes 1-5 s each, and it used to hold back the
+        // whole feed for over 30 s on a fresh install.
         for (source in sources) {
             val result = fetchSource(source)
             sourceResults.add(result)
-        }
-
-        var totalInserted = 0
-
-        for (result in sourceResults) {
             if (result.failed || result.inserted == 0) continue
-            val organizerId = result.organizerId
 
-            val resolvedEvents = result.events.map { event ->
-                imageResolver?.resolve(event) ?: event
-            }
-            val entities = resolvedEvents.map { it.toEntity(organizerId) }
+            val entities = withKnownImages(result.events.map { it.toEntity(result.organizerId) })
             if (entities.isNotEmpty()) {
-                eventDao.replaceEventsForSource(organizerId, entities)
+                eventDao.replaceEventsForSource(result.organizerId, entities)
                 totalInserted += entities.size
             }
         }
@@ -72,6 +68,8 @@ class EventDiscoveryRepository(
         // Merge the shared public catalogue hosted on the EventFinder API so
         // events created by other users become discoverable here too.
         totalInserted += refreshBackendEvents()
+
+        fillMissingImages(sourceResults)
 
         val totalFetched = sourceResults.sumOf { it.fetched }
         val failedSources = sourceResults.count { it.failed }
@@ -96,6 +94,47 @@ class EventDiscoveryRepository(
             failedSources = failedSources,
             sourceResults = sourceResults
         )
+    }
+
+    /**
+     * Keeps the cover photo found on an earlier refresh for events whose feed
+     * has none, so covers do not blank out and get looked up again every time.
+     */
+    private suspend fun withKnownImages(entities: List<EventEntity>): List<EventEntity> {
+        val missing = entities.filter { it.imageUrl.isNullOrBlank() }
+        if (missing.isEmpty()) return entities
+        val known = eventDao.findByIds(missing.map { it.id })
+            .filter { !it.imageUrl.isNullOrBlank() }
+            .associate { it.id to it.imageUrl }
+        if (known.isEmpty()) return entities
+        return entities.map { entity ->
+            if (entity.imageUrl.isNullOrBlank()) entity.copy(imageUrl = known[entity.id]) else entity
+        }
+    }
+
+    /**
+     * Finds cover photos for saved feed events that still have none and writes
+     * each one as soon as it is found. Image changes do not raise event alerts
+     * (see EventAlertDetector), so these updates stay silent.
+     */
+    private suspend fun fillMissingImages(sourceResults: List<SourceResult>) {
+        val resolver = imageResolver ?: return
+        var filled = 0
+        for (result in sourceResults) {
+            if (result.failed || result.inserted == 0) continue
+            for (event in result.events) {
+                if (!event.imageUrl.isNullOrBlank()) continue
+                val saved = eventDao.findById(event.toEntity(result.organizerId).id) ?: continue
+                if (!saved.imageUrl.isNullOrBlank()) continue
+
+                val imageUrl = runCatching { resolver.resolve(event).imageUrl }.getOrNull()
+                if (!imageUrl.isNullOrBlank()) {
+                    eventDao.upsert(saved.copy(imageUrl = imageUrl))
+                    filled++
+                }
+            }
+        }
+        AppLogger.i(tag, "Cover photos: $filled found")
     }
 
     /**
