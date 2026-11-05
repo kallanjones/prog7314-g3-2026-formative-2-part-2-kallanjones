@@ -93,6 +93,10 @@ suspend fun countUpcomingSampleEvents(now: Long): Int
 @Query("DELETE FROM events WHERE isCreatedByUser = 0 AND id LIKE 'sample-%'")
 suspend fun deleteSampleEvents()
 
+/** Upcoming events that are NOT demo samples (real feed/API listings or user-created). */
+@Query("SELECT COUNT(*) FROM events WHERE id NOT LIKE 'sample-%' AND endDate > :now")
+suspend fun countUpcomingRealEvents(now: Long): Int
+
 @Query("SELECT COUNT(*) FROM events WHERE isCreatedByUser = 0")
 suspend fun countNonUserCreated(): Int
 

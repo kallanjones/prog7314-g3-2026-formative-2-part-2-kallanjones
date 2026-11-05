@@ -56,6 +56,7 @@ interface EventRepository {
     fun observeEventsNearMe(lat: Double, lng: Double, radiusKm: Int): Flow<List<Event>>
     fun observeTrendingEvents(): Flow<List<Event>>
     suspend fun ensureSeeded()
+    suspend fun pruneSampleEventsIfRealExists()
     suspend fun toggleFavorite(eventId: String): Boolean
     suspend fun setRsvp(eventId: String, status: RsvpStatus)
     suspend fun createEvent(draft: NewEventDraft): Result<String>
@@ -169,29 +170,38 @@ class EventRepositoryImpl(
     @OptIn(ExperimentalCoroutinesApi::class)
 override suspend fun ensureSeeded() {
     val now = System.currentTimeMillis()
-    val upcomingSamples = eventDao.countUpcomingSampleEvents(now)
-    val seed = SampleEventsProvider.johannesburgAndCapeTown()
 
-    if (upcomingSamples == 0) {
+    // Demo events are a fallback only. If the catalogue already holds real
+    // upcoming listings — from the REST API, the public feeds or this user —
+    // the samples must not be mixed in with them (Part 2 feedback), so drop any
+    // leftover demo rows and stop.
+    if (eventDao.countUpcomingRealEvents(now) > 0) {
         eventDao.deleteSampleEvents()
-
-        AppLogger.i(
-            tag,
-            "Seeded ${seed.size} fresh sample events into cache"
-        )
-    } else {
-        AppLogger.d(
-            tag,
-            "Upcoming sample catalogue already contains $upcomingSamples events"
-        )
+        AppLogger.d(tag, "Real listings present - demo events not seeded")
+        return
     }
 
-    // Always upsert: rows written by an older build keep their old cover art
-    // otherwise (the picturesum placeholders survived for weeks this way), and
-    // REPLACE also rolls the demo dates forward so they stay upcoming.
+    // No real events yet (first launch, or offline before discovery): seed a
+    // small demo catalogue so the app is never empty. These are removed by
+    // [pruneSampleEventsIfRealExists] as soon as real listings arrive.
+    val seed = SampleEventsProvider.johannesburgAndCapeTown()
     eventDao.upsertAll(
         seed.map { it.toEntity(isCreatedByUser = false) }
     )
+    AppLogger.i(tag, "Seeded ${seed.size} fallback demo events (no real events yet)")
+}
+
+/**
+ * Removes the demo/sample events once real listings are available, so seeded
+ * events are never shown mixed in with real API/feed/user events. Safe to call
+ * after every discovery refresh; a no-op when there are no real events yet.
+ */
+override suspend fun pruneSampleEventsIfRealExists() {
+    val now = System.currentTimeMillis()
+    if (eventDao.countUpcomingRealEvents(now) > 0) {
+        eventDao.deleteSampleEvents()
+        AppLogger.i(tag, "Removed demo events now that real listings are available")
+    }
 }
 
     override suspend fun toggleFavorite(eventId: String): Boolean {

@@ -220,6 +220,8 @@ class HomeViewModel(
                 runCatching { eventDiscoveryRepository.refresh() }.onFailure {
                     AppLogger.e("HomeViewModel", "Event discovery failed", it)
                 }
+                // Drop demo events once real listings have been discovered.
+                eventRepository.pruneSampleEventsIfRealExists()
             }
         }
 
@@ -807,6 +809,7 @@ class HomeViewModel(
             runCatching { eventDiscoveryRepository.refresh() }.onFailure {
                 AppLogger.e("HomeViewModel", "Event discovery failed on refresh", it)
             }
+            eventRepository.pruneSampleEventsIfRealExists()
 
             _uiState.update { it.copy(isLoading = false, isRefreshing = false) }
         }
@@ -829,6 +832,7 @@ class HomeViewModel(
                 .onFailure {
                     AppLogger.e("HomeViewModel", "Event discovery failed", it)
                 }
+            eventRepository.pruneSampleEventsIfRealExists()
         }
     }
 

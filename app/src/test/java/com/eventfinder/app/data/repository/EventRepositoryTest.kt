@@ -79,6 +79,9 @@ class EventRepositoryTest {
                     it.endDate > now
             }
 
+        override suspend fun countUpcomingRealEvents(now: Long): Int =
+            rows.values.count { !it.id.startsWith("sample-") && it.endDate > now }
+
         override suspend fun deleteSampleEvents() {
             rows.values
                 .filter { !it.isCreatedByUser && it.id.startsWith("sample-") }
