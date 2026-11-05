@@ -14,9 +14,10 @@ data class ReportEntity(
     val resolved: Boolean = false
 )
 
-@Entity(tableName = "blocked_users")
+// Keyed on both ids so one user can block more than one other user.
+@Entity(tableName = "blocked_users", primaryKeys = ["userId", "blockedUserId"])
 data class BlockedUserEntity(
-    @PrimaryKey val userId: String,
+    val userId: String,
     val blockedUserId: String,
     val createdAt: Long
 )

@@ -326,6 +326,47 @@ private val MIGRATION_20_21 = object : Migration(20, 21) {
     }
 }
 
+// Repairs two tables whose migrated shape did not match their entity, which made
+// Room's schema check fail and crashed the app for anyone upgrading an older install:
+//  - MIGRATION_9_10 created event_reviews without the foreign key and userId index.
+//  - blocked_users was keyed on userId alone on fresh installs, so blocking a second
+//    user replaced the first; it is now keyed on (userId, blockedUserId) everywhere.
+// SQLite cannot change keys on an existing table, so both are rebuilt and copied across.
+private val MIGRATION_21_22 = object : Migration(21, 22) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS blocked_users_new " +
+                "(userId TEXT NOT NULL, blockedUserId TEXT NOT NULL, createdAt INTEGER NOT NULL, " +
+                "PRIMARY KEY(userId, blockedUserId))"
+        )
+        db.execSQL(
+            "INSERT OR IGNORE INTO blocked_users_new (userId, blockedUserId, createdAt) " +
+                "SELECT userId, blockedUserId, createdAt FROM blocked_users"
+        )
+        db.execSQL("DROP TABLE blocked_users")
+        db.execSQL("ALTER TABLE blocked_users_new RENAME TO blocked_users")
+
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS event_reviews_new (" +
+                "eventId TEXT NOT NULL, userId TEXT NOT NULL, authorName TEXT NOT NULL, " +
+                "rating INTEGER NOT NULL, comment TEXT NOT NULL, createdAt INTEGER NOT NULL, " +
+                "verifiedAttendance INTEGER NOT NULL, photoUrls TEXT NOT NULL, " +
+                "PRIMARY KEY(eventId, userId), " +
+                "FOREIGN KEY(eventId) REFERENCES events(id) ON UPDATE NO ACTION ON DELETE CASCADE)"
+        )
+        // Reviews whose event no longer exists would break the new foreign key.
+        db.execSQL(
+            "INSERT OR IGNORE INTO event_reviews_new " +
+                "(eventId, userId, authorName, rating, comment, createdAt, verifiedAttendance, photoUrls) " +
+                "SELECT eventId, userId, authorName, rating, comment, createdAt, verifiedAttendance, photoUrls " +
+                "FROM event_reviews WHERE eventId IN (SELECT id FROM events)"
+        )
+        db.execSQL("DROP TABLE event_reviews")
+        db.execSQL("ALTER TABLE event_reviews_new RENAME TO event_reviews")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_event_reviews_userId ON event_reviews (userId)")
+    }
+}
+
   @Database(
     entities = [
         UserEntity::class,
@@ -341,7 +382,7 @@ private val MIGRATION_20_21 = object : Migration(20, 21) {
         BlockedUserEntity::class,
         DraftEntity::class
     ],
-    version = 21,
+    version = 22,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase(), DatabaseTransactionHelper {
@@ -411,7 +452,7 @@ abstract class AppDatabase : RoomDatabase(), DatabaseTransactionHelper {
                 AppDatabase::class.java,
                 DB_NAME
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22)
                                 .build()
     }
 }
