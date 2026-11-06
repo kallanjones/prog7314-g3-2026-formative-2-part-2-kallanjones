@@ -875,4 +875,5 @@
   <string name="msg_could_not_locate">Could not locate %1$s — check your connection</string>
   <string name="msg_data_exported">Data exported</string>
   <string name="msg_export_failed">Export failed</string>
+  <string name="push_new_event_body">%1$s was just added. Tap to see the details.</string>
 </resources>

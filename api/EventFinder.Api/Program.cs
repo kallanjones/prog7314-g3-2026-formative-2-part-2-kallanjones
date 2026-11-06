@@ -135,6 +135,7 @@ builder.Services.AddRateLimiter(options =>
 
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddSingleton<FirebaseTokenService>();
+builder.Services.AddSingleton<IPushNotifier, FcmPushNotifier>();
 builder.Services.AddHttpClient<GoogleTokenVerifier>();
 builder.Services.AddHttpClient<IEmailService, EmailService>();
 // Azure Blob Storage (free tier). The service reports itself as

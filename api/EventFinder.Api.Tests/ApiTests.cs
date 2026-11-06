@@ -27,9 +27,23 @@ public class NoOpEmailService : IEmailService
         Task.CompletedTask;
 }
 
+/// <summary>Records new-event pushes instead of sending them to Firebase.</summary>
+public class RecordingPushNotifier : IPushNotifier
+{
+    public List<EventEntity> NewEvents { get; } = new();
+
+    public Task NotifyNewEventAsync(EventEntity ev, CancellationToken ct = default)
+    {
+        lock (NewEvents) NewEvents.Add(ev);
+        return Task.CompletedTask;
+    }
+}
+
 public class ApiFactory : WebApplicationFactory<Program>
 {
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
+
+    public RecordingPushNotifier Push { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -50,6 +64,9 @@ public class ApiFactory : WebApplicationFactory<Program>
 
     services.RemoveAll(typeof(IEmailService));
     services.AddSingleton<IEmailService>(new NoOpEmailService());
+
+    services.RemoveAll(typeof(IPushNotifier));
+    services.AddSingleton<IPushNotifier>(Push);
         });
     }
 
@@ -318,6 +335,33 @@ public class EventTests : IClassFixture<ApiFactory>
         var createdAt = envelope.Data.GetProperty("createdAt").GetDateTime();
         Assert.True(createdAt <= DateTime.UtcNow.AddMinutes(1));
         Assert.True(envelope.Data.GetProperty("attendeeCount").GetInt32() == 0);
+    }
+
+    [Fact]
+    public async Task Creating_a_public_event_sends_a_new_event_push()
+    {
+        var client = _factory.CreateClient();
+        await client.AuthenticateAsync(_factory);
+
+        var response = await client.PostAsJsonAsync("/api/events", NewEvent("Push Test Public"));
+        Assert.Equal(System.Net.HttpStatusCode.Created, response.StatusCode);
+        var id = (await response.ReadEnvelopeAsync()).Data.GetProperty("id").GetGuid();
+
+        lock (_factory.Push.NewEvents)
+            Assert.Contains(_factory.Push.NewEvents, e => e.Id == id && e.Title == "Push Test Public");
+    }
+
+    [Fact]
+    public async Task Creating_a_private_event_sends_no_push()
+    {
+        var client = _factory.CreateClient();
+        await client.AuthenticateAsync(_factory);
+
+        var response = await client.PostAsJsonAsync("/api/events", NewEvent("Push Test Private", isPublic: false));
+        Assert.Equal(System.Net.HttpStatusCode.Created, response.StatusCode);
+
+        lock (_factory.Push.NewEvents)
+            Assert.DoesNotContain(_factory.Push.NewEvents, e => e.Title == "Push Test Private");
     }
 
     [Fact]

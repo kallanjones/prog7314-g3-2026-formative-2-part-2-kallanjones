@@ -36,22 +36,29 @@ class EventFinderMessagingService : FirebaseMessagingService() {
         // "Group updates" only concerns group-plan pushes; other pushes stay
         // unaffected. The preference is read synchronously because FCM gives
         // the service a short window to display the notification.
-        if (message.data["type"] == "group") {
+        val type = message.data["type"]
+        if (type == "group" || type == "new_event") {
             val preferences = (application as? com.eventfinder.app.EventFinderApp)
                 ?.container?.preferences
             val enabled = preferences != null && kotlinx.coroutines.runBlocking {
-                preferences.notifyGroupUpdates.first()
+                if (type == "group") preferences.notifyGroupUpdates.first()
+                else preferences.notifyNearbyEvents.first()
             }
             if (!enabled) {
-                AppLogger.i("FCM", "Group updates disabled - dropping push")
+                AppLogger.i("FCM", "Push type '$type' disabled in settings - dropping push")
                 return
             }
         }
+
+        // The API sends new-event pushes as data only, so the text comes from
+        // this app's string resources and follows the chosen language.
+        val newEventTitle = message.data["eventTitle"].takeIf { type == "new_event" }
         val title = message.notification?.title
             ?: message.data["title"]
             ?: getString(R.string.new_events_alert_title)
         val body = message.notification?.body
             ?: message.data["body"]
+            ?: newEventTitle?.let { getString(R.string.push_new_event_body, it) }
             ?: return
         val eventId = message.data["eventId"]
 

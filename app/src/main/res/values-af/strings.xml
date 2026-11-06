@@ -873,4 +873,5 @@
   <string name="msg_could_not_locate">Kon nie %1$s vind nie — gaan jou verbinding na</string>
   <string name="msg_data_exported">Data uitgevoer</string>
   <string name="msg_export_failed">Uitvoer het misluk</string>
+  <string name="push_new_event_body">%1$s is pas bygevoeg. Tik om die besonderhede te sien.</string>
 </resources>

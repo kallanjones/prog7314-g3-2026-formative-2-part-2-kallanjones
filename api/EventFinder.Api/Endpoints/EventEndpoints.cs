@@ -2,6 +2,7 @@ using System.Security.Claims;
 using EventFinder.Api.Common;
 using EventFinder.Api.Data;
 using EventFinder.Api.Dtos;
+using EventFinder.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventFinder.Api.Endpoints;
@@ -107,7 +108,7 @@ public static class EventEndpoints
     }
 
     private static async Task<IResult> CreateAsync(
-        CreateEventRequest request, ClaimsPrincipal principal, AppDbContext db, CancellationToken ct)
+        CreateEventRequest request, ClaimsPrincipal principal, AppDbContext db, IPushNotifier push, CancellationToken ct)
     {
         var errors = RequestValidator.Validate(request);
         if (errors.Count > 0)
@@ -149,6 +150,11 @@ public static class EventEndpoints
         };
         db.Events.Add(ev);
         await db.SaveChangesAsync(ct);
+
+        // Real-time alert for everyone else. Private events stay quiet. The event is
+        // already saved, so the push is not cancelled if the client disconnects.
+        if (ev.IsPublic)
+            await push.NotifyNewEventAsync(ev, CancellationToken.None);
 
         return Results.Json(ApiResponse<EventDto>.Ok(ToDto(ev), "Event created."), statusCode: 201);
     }
