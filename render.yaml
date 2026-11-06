@@ -3,6 +3,9 @@ databases:
   # injected into the API as ConnectionStrings__Default below.
   - name: eventfinder-db
     plan: free
+    # Must match the web service's region: the internal connection string
+    # only resolves inside one region.
+    region: frankfurt
     postgresMajorVersion: '16'
     databaseName: eventfinder
     user: eventfinder
@@ -13,6 +16,7 @@ services:
     name: eventfinder-api
     runtime: docker
     plan: free
+    region: frankfurt
     dockerfilePath: ./api/EventFinder.Api/Dockerfile
     dockerContext: ./api/EventFinder.Api
     healthCheckPath: /health
