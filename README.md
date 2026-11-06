@@ -79,7 +79,7 @@ Part 2 prototype.
 | **Reminders** | `AlarmManager` + `NotificationChannel` reminders **24 hours and 1 hour** before an attended event, cancelled when the RSVP is declined. |
 | **Event alerts** | On-device notifications flag newly added or changed events in the local Room catalogue — computed by a pure diff, no push service required. |
 | **Cloud sync** | User-created events, favourites and RSVPs sync bidirectionally with **Cloud Firestore** (NoSQL) — automatically, whenever connectivity returns. |
-| **Real-time push** | **Firebase Cloud Messaging** delivers live updates to the `new_events` topic; devices auto-subscribe on launch. |
+| **Real-time push** | When anyone creates a public event, the REST API sends a **Firebase Cloud Messaging** message to the `new_events` topic, which every install subscribes to on launch. The notification text is built on the device, so it appears in English or Afrikaans. |
 | **Blob storage** | Event photos upload to **Azure Blob Storage** through the REST API; when the API is unreachable they are stored in local internal file storage instead — nothing breaks. |
 
 ## Screenshots
@@ -116,7 +116,7 @@ Android 15 (API 35) at 1080 × 2400.
 | Backend | **ASP.NET Core 8 Minimal API** (`api/`) | Verified auth (register / login / Google), two-step password reset, public event catalogue, multi-user RSVP. EF Core + Npgsql (PostgreSQL), deploys on Render free tier. |
 | Google sign-in | **AndroidX Credential Manager** | Returns a Google ID token verified server-side (audience + signature) before a JWT is issued. |
 | Blob storage | **Azure Blob Storage** | Event photos stored as blobs through the API, so the storage account key never reaches the handset; graceful fallback to local internal storage when Azure is unreachable. |
-| Push notifications | **Firebase Cloud Messaging** | Real-time `new_events` topic pushes; free, no server needed for console sends. |
+| Push notifications | **Firebase Cloud Messaging** | Real-time `new_events` topic pushes sent by the API (`FcmPushNotifier`) or from the Firebase console. |
 | Preferences | **DataStore Preferences 1.0** | Async, type-safe key/value storage for settings & session. |
 | Networking | **Retrofit 2.9 + OkHttp 4.12 + Gson** | Industry standard REST client with logging interceptor. |
 | Images | **Coil 2.6** | Coroutine-friendly Compose image loading. |
@@ -380,8 +380,8 @@ adb install -r app\build\outputs\apk\debug\app-debug.apk
 
 ## Testing
 
-The project has **167 JVM unit tests** across 19 suites, all runnable from the command line with
-no emulator:
+The project has **265 JVM unit tests** across 31 suites, all runnable from the command line with
+no emulator. The main suites are listed below.
 
 ```bash
 ./gradlew testDebugUnitTest
@@ -413,8 +413,9 @@ HTML reports are written to `app/build/reports/tests/testDebugUnitTest/index.htm
 
 ### Instrumented UI tests
 
-A small **Compose UI test** suite runs on a connected device/emulator and covers the shared
-widgets (`app/src/androidTest/.../ui/components/CommonComponentsTest.kt`):
+A small **Compose UI test** suite runs on a connected device/emulator. It covers the shared
+widgets (`CommonComponentsTest.kt`) and checks that the app launches into the main navigation
+(`NavigationSmokeTest.kt`):
 
 ```bash
 ./gradlew connectedDebugAndroidTest
@@ -428,6 +429,7 @@ widgets (`app/src/androidTest/.../ui/components/CommonComponentsTest.kt`):
 | `categoryChips_selectsACategoryAndCanClearIt` | Category chips select and clear the filter. |
 | `categoryChips_selectsTheActiveChip` | The active category exposes selected semantics; the others do not. |
 | `emptyState_displaysTitleAndSubtitle` | The reusable `EmptyState` renders its icon, title and subtitle. |
+| `appLaunchesAndShowsBottomNav` | A guest session launches straight into the app with the bottom navigation visible. |
 
 ## Continuous integration
 
@@ -495,12 +497,12 @@ docs/screenshots/                        Real device screenshots
 | **NoSQL database (read)** | `CloudSyncManager.pullRemoteChanges` — Firestore reads merged into Room |
 | **Biometric authentication** | `security/BiometricAuth.kt` — AndroidX BiometricPrompt, BIOMETRIC_STRONG |
 | **Offline mode + auto-sync** | `SyncCoordinator` — offline→online transition triggers Firestore sync + feed refresh |
-| **Real-time notifications (FCM)** | `EventFinderMessagingService` + `new_events` topic auto-subscription |
-| **Multi-language (2 SA languages)** | English + Afrikaans (`values-af/strings.xml`), `LocaleManager`, in-app switcher |
+| **Real-time notifications (FCM)** | API `FcmPushNotifier` sends to the `new_events` topic on every public event created; app `EventFinderMessagingService` shows it |
+| **Multi-language (2 SA languages)** | English + Afrikaans for every screen (`values-af/strings.xml`, matching string sets), `LocaleManager`, in-app switcher |
 | **Production assets** | Adaptive launcher icon (SA-flag colours), Material 3 theming, screenshot set |
 | **Play Store preparation** | Signed release build (`keystore.properties`), minify + ProGuard, `bundleRelease` ready |
-| **CI/CD (GitHub Actions)** | `.github/workflows/android-ci.yml` — build, 167 unit tests, lint, instrumentation on every push |
-| Unit testing | 167 JVM tests + 13 API integration tests + 6 Compose instrumented tests + GitHub Actions CI |
+| **CI/CD (GitHub Actions)** | `.github/workflows/android-ci.yml` — build, 265 unit tests, 57 API tests, lint, instrumentation on every push |
+| Unit testing | 265 JVM tests + 57 API integration tests + 7 Compose instrumented tests + GitHub Actions CI |
 | Logging & comments | `AppLogger` used across data/UI layers; KDoc on every class |
 | Documentation | This README with Mermaid architecture diagrams |
 | **Final POE tag** | Git tag `Final-POE` marks the submission commit |
@@ -655,8 +657,15 @@ service cloud.firestore {
 
 ### Sending a real-time push
 
+Pushes are sent automatically: creating a **public** event through the API sends a data message
+to the `new_events` topic (`api/EventFinder.Api/Services/PushNotifier.cs`). Every install subscribes
+to that topic on launch, and the "Nearby events" switch in Settings turns these alerts off. The API
+needs `Firebase__ServiceAccountJson` set to send; without it, pushes are skipped and logged.
+
+To send one by hand instead:
+
 1. Firebase console → **Cloud Messaging** → **Send your first message**.
-2. Set the topic to `new_events` (the app auto-subscribes every install to this topic).
+2. Set the topic to `new_events`.
 3. Provide a title and body; every device with the app installed receives the notification.
 
 ### Release signing (Play Store)
