@@ -1,5 +1,6 @@
-﻿package com.eventfinder.app.ui.screens.home
+package com.eventfinder.app.ui.screens.home
 
+import androidx.compose.ui.res.pluralStringResource
 import com.eventfinder.app.ui.theme.LocalAccentText
 import android.Manifest
 import android.annotation.SuppressLint
@@ -117,6 +118,7 @@ import com.eventfinder.app.data.repository.TravelMode
 import com.eventfinder.app.data.repository.formatRouteDistance
 import com.eventfinder.app.data.repository.formatRouteDuration
 import com.eventfinder.app.di.AppContainer
+import com.eventfinder.app.domain.model.EventCollection
 import com.eventfinder.app.domain.model.EventSort
 import com.eventfinder.app.domain.model.TimeWindow
 import androidx.compose.foundation.Image
@@ -318,7 +320,7 @@ fun HomeScreen(
                             )
                         }
                         Text(
-                            text = "SOUTH AFRICA",
+                            text = stringResource(R.string.brand_country),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -333,14 +335,14 @@ fun HomeScreen(
                             painter = painterResource(
                                 if (state.isMapView) R.drawable.hdr_list else R.drawable.hdr_map
                             ),
-                            contentDescription = if (state.isMapView) "List view" else "Map view",
+                            contentDescription = if (state.isMapView) stringResource(R.string.home_list_view) else stringResource(R.string.home_map_view),
                             modifier = Modifier.size(26.dp)
                         )
                     }
                     IconButton(onClick = { viewModel.onShowFilterSheet(true) }) {
                         Image(
                             painter = painterResource(R.drawable.hdr_filters),
-                            contentDescription = "Filter events",
+                            contentDescription = stringResource(R.string.home_filter_events),
                             modifier = Modifier.size(26.dp)
                         )
                     }
@@ -386,14 +388,14 @@ fun HomeScreen(
                     // Sync status is visible instead of silent: the user can
                     // tell a pull-to-refresh or background sync is in flight.
                     Text(
-                        "Syncing…",
+                        stringResource(R.string.home_syncing),
                         style = MaterialTheme.typography.labelSmall,
                         color = LocalAccentText.current,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
                     )
                 } else if (state.lastRefreshAt > 0L) {
                     Text(
-                        "Last updated ${((System.currentTimeMillis() - state.lastRefreshAt) / 60000)} min ago",
+                        stringResource(R.string.home_last_updated, (System.currentTimeMillis() - state.lastRefreshAt) / 60000),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
@@ -404,12 +406,12 @@ fun HomeScreen(
                     value = state.query,
                     onValueChange = viewModel::onQueryChange,
                     placeholder = {
-                        Text("What are you in the mood for?")
+                        Text(stringResource(R.string.home_what_are_you_in_the))
                     },
                     leadingIcon = {
                         Image(
                             painter = painterResource(R.drawable.evt_search),
-                            contentDescription = "Search events",
+                            contentDescription = stringResource(R.string.home_search_events),
                             modifier = Modifier.size(22.dp)
                         )
                     },
@@ -488,12 +490,12 @@ fun HomeScreen(
                         ) {
                             MapCircleButton(
                                 icon = Icons.Outlined.Add,
-                                contentDescription = "Zoom in",
+                                contentDescription = stringResource(R.string.home_zoom_in),
                                 onClick = { mapViewRef?.controller?.zoomIn() }
                             )
                             MapCircleButton(
                                 icon = Icons.Outlined.Remove,
-                                contentDescription = "Zoom out",
+                                contentDescription = stringResource(R.string.home_zoom_out),
                                 onClick = { mapViewRef?.controller?.zoomOut() }
                             )
                             // Recenter route: visible only while a route is up.
@@ -670,13 +672,13 @@ private fun ColumnScope.EventList(
             EmptyState(
                 icon = Icons.Outlined.EventBusy,
                 title = stringResource(R.string.no_events),
-                subtitle = "Try changing your filters or check again later."
+                subtitle = stringResource(R.string.home_try_changing_your_filters_or)
             )
 
             Spacer(Modifier.height(8.dp))
 
             TextButton(onClick = onRetry) {
-                Text("Refresh events")
+                Text(stringResource(R.string.home_refresh_events))
             }
         }
 
@@ -704,12 +706,12 @@ private fun ColumnScope.EventList(
                 ) {
                     Column {
                         Text(
-                            text = "Featured event",
+                            text = stringResource(R.string.home_featured_event),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.ExtraBold
                         )
                         Text(
-                            text = "A highlight from around South Africa",
+                            text = stringResource(R.string.home_a_highlight_from_around_south),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -743,12 +745,12 @@ private fun ColumnScope.EventList(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Smart Discovery",
+                        text = stringResource(R.string.home_smart_discovery),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold
                     )
                     Text(
-                        text = "See All  \u2192",
+                        text = stringResource(R.string.home_see_all),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
                         color = LocalAccentText.current,
@@ -775,11 +777,11 @@ private fun ColumnScope.EventList(
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     item {
                         DiscoveryCard(
-                            title = "Near Me Now",
-                            subtitle = "Events nearby",
+                            title = stringResource(R.string.home_near_me_now),
+                            subtitle = stringResource(R.string.home_events_nearby),
                             imageUrl = imageForNearMe
                                 ?: state.events.firstOrNull()?.event?.imageUrl,
-                            imageDescription = "Nearest upcoming event",
+                            imageDescription = stringResource(R.string.home_nearest_upcoming_event),
                             icon = Icons.Outlined.LocationOn,
                             active = state.sort == EventSort.DISTANCE && state.radiusFilterEnabled,
                             onClick = onNearMe
@@ -787,11 +789,11 @@ private fun ColumnScope.EventList(
                     }
                     item {
                         DiscoveryCard(
-                            title = "Trending This Weekend",
-                            subtitle = "Top picks",
+                            title = stringResource(R.string.home_trending_this_weekend),
+                            subtitle = stringResource(R.string.home_top_picks),
                             imageUrl = trendingEvent?.event?.imageUrl,
-                            imageDescription = trendingEvent?.event?.let { "Trending event: ${it.title}" }
-                                ?: "Trending event",
+                            imageDescription = trendingEvent?.event?.let { stringResource(R.string.home_trending_event_named, it.title) }
+                                ?: stringResource(R.string.home_trending_event),
                             icon = Icons.AutoMirrored.Outlined.TrendingUp,
                             active = state.weekendOnly,
                             onClick = onTrendingWeekend
@@ -804,7 +806,7 @@ private fun ColumnScope.EventList(
             if (state.collections.isNotEmpty()) {
                 item {
                     Text(
-                        text = "Collections",
+                        text = stringResource(R.string.home_collections),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold,
                         modifier = Modifier.padding(top = 4.dp)
@@ -827,7 +829,7 @@ private fun ColumnScope.EventList(
                                 ),
                                 label = {
                                     Text(
-                                        text = "${chip.collection.title}  ${chip.count}",
+                                        text = "${collectionTitle(chip.collection)}  ${chip.count}",
                                         style = MaterialTheme.typography.labelLarge,
                                         fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
                                     )
@@ -847,13 +849,13 @@ private fun ColumnScope.EventList(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Upcoming events",
+                        text = stringResource(R.string.upcoming_events),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold
                     )
 
                     Text(
-                        text = "${state.events.size} events",
+                        text = pluralStringResource(R.plurals.home_event_count, state.events.size, state.events.size),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1005,7 +1007,7 @@ private fun MapEventCard(
                 .height(44.dp),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Text("View Details  \u2192", fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.home_view_details), fontWeight = FontWeight.Bold)
         }
         Spacer(Modifier.height(8.dp))
         // Directions row: draws the real blue route on the map, or hands the
@@ -1479,7 +1481,7 @@ private fun ThemeModeToggle(
     ) {
         InteractivePngIcon(
             iconRes = R.drawable.hdr_sun,
-            contentDescription = "Light mode",
+            contentDescription = stringResource(R.string.home_light_mode),
             active = !darkActive,
             dimWhenInactive = true,
             size = 22.dp,
@@ -1488,7 +1490,7 @@ private fun ThemeModeToggle(
         Spacer(Modifier.width(4.dp))
         InteractivePngIcon(
             iconRes = R.drawable.hdr_moon,
-            contentDescription = "Dark mode",
+            contentDescription = stringResource(R.string.home_dark_mode),
             active = darkActive,
             dimWhenInactive = true,
             size = 22.dp,
@@ -1517,7 +1519,7 @@ private fun LocationSelectorPill(
         ) {
             Image(
                 painter = painterResource(R.drawable.hdr_map_pin),
-                contentDescription = "Location: $label",
+                contentDescription = stringResource(R.string.home_location_named, label),
                 modifier = Modifier.size(18.dp)
             )
             Spacer(Modifier.width(6.dp))
@@ -1610,7 +1612,7 @@ private fun FeaturedEventCard(
                 color = MaterialTheme.colorScheme.error
             ) {
                 Text(
-                    text = "FEATURED",
+                    text = stringResource(R.string.home_featured),
                     modifier = Modifier.padding(
                         horizontal = 12.dp,
                         vertical = 7.dp
@@ -1691,7 +1693,7 @@ private fun FeaturedEventCard(
                     )
 
                     Text(
-                        text = "View Details  \u2192",
+                        text = stringResource(R.string.home_view_details),
                         modifier = Modifier
                             .clip(RoundedCornerShape(50))
                             .background(MaterialTheme.colorScheme.primary)
@@ -1738,7 +1740,7 @@ private fun FilterSheet(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "Filter Events",
+                    text = stringResource(R.string.home_filter_events_2),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier.weight(1f)
@@ -1751,7 +1753,7 @@ private fun FilterSheet(
                 ) {
                     Image(
                         painter = painterResource(R.drawable.usr_close),
-                        contentDescription = "Close filters",
+                        contentDescription = stringResource(R.string.home_close_filters),
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -1759,7 +1761,7 @@ private fun FilterSheet(
 
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "When?",
+                text = stringResource(R.string.home_when),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1774,28 +1776,28 @@ private fun FilterSheet(
                 FilterChip(
                     selected = window == TimeWindow.ANYTIME,
                     onClick = { window = TimeWindow.ANYTIME },
-                    label = { Text("Anytime") }
+                    label = { Text(stringResource(R.string.home_anytime)) }
                 )
                 FilterChip(
                     selected = window == TimeWindow.TODAY,
                     onClick = { window = TimeWindow.TODAY },
-                    label = { Text("Today") }
+                    label = { Text(stringResource(R.string.home_today)) }
                 )
                 FilterChip(
                     selected = window == TimeWindow.WEEKEND,
                     onClick = { window = TimeWindow.WEEKEND },
-                    label = { Text("This Weekend") }
+                    label = { Text(stringResource(R.string.home_this_weekend)) }
                 )
                 FilterChip(
                     selected = window == TimeWindow.NEXT_WEEK,
                     onClick = { window = TimeWindow.NEXT_WEEK },
-                    label = { Text("Next Week") }
+                    label = { Text(stringResource(R.string.home_next_week)) }
                 )
             }
 
             Spacer(Modifier.height(16.dp))
             Text(
-                text = "Rating",
+                text = stringResource(R.string.organizer_rating_label),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1822,7 +1824,7 @@ private fun FilterSheet(
                             .padding(horizontal = 8.dp, vertical = 6.dp)
                     ) {
                         Text(
-                            text = if (minRating == 0) "Any rating" else "$minRating+ stars",
+                            text = if (minRating == 0) stringResource(R.string.home_any_rating) else "$minRating+ stars",
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.SemiBold,
                             color = LocalAccentText.current
@@ -1839,7 +1841,7 @@ private fun FilterSheet(
                         onDismissRequest = { ratingMenuExpanded = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Any rating") },
+                            text = { Text(stringResource(R.string.home_any_rating)) },
                             onClick = {
                                 minRating = 0
                                 ratingMenuExpanded = false
@@ -1847,7 +1849,7 @@ private fun FilterSheet(
                         )
                         for (rating in 2..5) {
                             DropdownMenuItem(
-                                text = { Text("$rating stars or more") },
+                                text = { Text(stringResource(R.string.home_rating_or_more, rating)) },
                                 onClick = {
                                     minRating = rating
                                     ratingMenuExpanded = false
@@ -1890,7 +1892,7 @@ private fun FilterSheet(
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "Verified Organiser",
+                    text = stringResource(R.string.home_verified_organiser),
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.weight(1f)
                 )
@@ -1898,7 +1900,7 @@ private fun FilterSheet(
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "Accessible Events",
+                    text = stringResource(R.string.home_accessible_events),
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.weight(1f)
                 )
@@ -1906,7 +1908,7 @@ private fun FilterSheet(
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "Near Me Now",
+                    text = stringResource(R.string.home_near_me_now),
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.weight(1f)
                 )
@@ -1939,7 +1941,7 @@ private fun FilterSheet(
                     .height(50.dp),
                 shape = RoundedCornerShape(14.dp)
             ) {
-                Text("Apply Filters", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.home_apply_filters), fontWeight = FontWeight.Bold)
             }
             TextButton(
                 onClick = {
@@ -1948,14 +1950,20 @@ private fun FilterSheet(
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Clear All")
+                Text(stringResource(R.string.home_clear_all))
             }
         }
     }
 }
 
-
-
-
-
-
+/** Translated title for a curated Home collection; falls back to its English title. */
+@Composable
+private fun collectionTitle(collection: EventCollection): String = when (collection.id) {
+    "this_weekend" -> stringResource(R.string.collection_this_weekend)
+    "live_music" -> stringResource(R.string.collection_live_music)
+    "family" -> stringResource(R.string.collection_family)
+    "markets" -> stringResource(R.string.collection_markets)
+    "outdoors" -> stringResource(R.string.collection_outdoors)
+    "comedy" -> stringResource(R.string.collection_comedy)
+    else -> collection.title
+}

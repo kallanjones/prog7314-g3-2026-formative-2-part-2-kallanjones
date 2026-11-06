@@ -1,5 +1,7 @@
 package com.eventfinder.app.ui.screens.collections
 
+import com.eventfinder.app.R
+import androidx.compose.ui.res.stringResource
 import com.eventfinder.app.ui.theme.LocalAccentText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -89,17 +91,17 @@ fun CollectionsScreen(
             collection.eventIds.mapNotNull { events[it] }
         }
 
-    PreferenceScaffold(title = "Event Collections", onBack = onBack) {
+    PreferenceScaffold(title = stringResource(R.string.collections_event_collections), onBack = onBack) {
         PreferenceHeroIcon(Icons.Outlined.Collections)
         PreferenceHeading(
-            title = "Your Collections",
-            subtitle = "Group events into lists you can come back to."
+            title = stringResource(R.string.collections_your_collections),
+            subtitle = stringResource(R.string.collections_group_events_into_lists_you)
         )
 
         if (collections.isEmpty()) {
             Spacer(Modifier.height(18.dp))
             Text(
-                "No collections yet. Create one to start grouping events.",
+                stringResource(R.string.collections_none_yet),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -161,7 +163,7 @@ fun CollectionsScreen(
                     IconButton(onClick = { scope.launch { preferences.deleteCollection(collection.id) } }) {
                         Icon(
                             Icons.Outlined.Close,
-                            contentDescription = "Delete ${collection.name}",
+                            contentDescription = stringResource(R.string.collections_delete_named, collection.name),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp)
                         )
@@ -171,7 +173,7 @@ fun CollectionsScreen(
                 if (expanded) {
                     if (items.isEmpty()) {
                         Text(
-                            "No events match this collection yet.",
+                            stringResource(R.string.collections_no_matches),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -247,21 +249,21 @@ private fun CreateCollectionDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Create Collection") },
+        title = { Text(stringResource(R.string.collections_create_collection)) },
         text = {
             Column {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Collection name") },
-                    placeholder = { Text("Weekend plans") },
+                    label = { Text(stringResource(R.string.collections_collection_name)) },
+                    placeholder = { Text(stringResource(R.string.collections_weekend_plans)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp)
                 )
                 Spacer(Modifier.height(14.dp))
                 Text(
-                    "Category",
+                    stringResource(R.string.category_label),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -304,8 +306,8 @@ private fun CreateCollectionDialog(
                     if (trimmed.isNotEmpty()) onCreate(trimmed, category)
                 },
                 enabled = name.isNotBlank()
-            ) { Text("Create") }
+            ) { Text(stringResource(R.string.create_short)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } }
     )
 }

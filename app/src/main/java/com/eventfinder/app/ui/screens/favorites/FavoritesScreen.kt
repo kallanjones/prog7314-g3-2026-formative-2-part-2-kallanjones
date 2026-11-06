@@ -1,5 +1,8 @@
-﻿package com.eventfinder.app.ui.screens.favorites
+package com.eventfinder.app.ui.screens.favorites
 
+import androidx.compose.ui.res.pluralStringResource
+import com.eventfinder.app.R
+import androidx.compose.ui.res.stringResource
 import com.eventfinder.app.ui.theme.LocalAccentText
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -52,7 +55,7 @@ fun FavoritesScreen(
                 Spacer(Modifier.height(24.dp))
 
                 Text(
-                    text = "Your favourites",
+                    text = stringResource(R.string.favorites_your_favourites),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.ExtraBold
                 )
@@ -60,15 +63,15 @@ fun FavoritesScreen(
                 Spacer(Modifier.height(8.dp))
 
                 Text(
-                    text = "Keep the events you love in one place.",
+                    text = stringResource(R.string.favorites_keep_the_events_you_love),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 EmptyState(
                     icon = Icons.Outlined.FavoriteBorder,
-                    title = "No saved events yet",
-                    subtitle = "Explore events and tap the heart to save your favourites.",
+                    title = stringResource(R.string.favorites_no_saved_events_yet),
+                    subtitle = stringResource(R.string.favorites_explore_events_and_tap_the),
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
@@ -88,7 +91,7 @@ fun FavoritesScreen(
                         .padding(horizontal = 20.dp, vertical = 20.dp)
                 ) {
                     Text(
-                        text = "Your favourites",
+                        text = stringResource(R.string.favorites_your_favourites),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.onBackground
@@ -97,7 +100,7 @@ fun FavoritesScreen(
                     Spacer(Modifier.height(6.dp))
 
                     Text(
-                        text = "Events you've saved for later.",
+                        text = stringResource(R.string.favorites_events_you_ve_saved_for),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -105,7 +108,7 @@ fun FavoritesScreen(
                     Spacer(Modifier.height(12.dp))
 
                     Text(
-                        text = "${events.size} saved ${if (events.size == 1) "event" else "events"}",
+                        text = pluralStringResource(R.plurals.favorites_saved_count, events.size, events.size),
                         style = MaterialTheme.typography.labelLarge,
                         color = LocalAccentText.current,
                         fontWeight = FontWeight.Bold

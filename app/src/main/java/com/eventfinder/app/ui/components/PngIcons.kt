@@ -1,5 +1,6 @@
 package com.eventfinder.app.ui.components
 
+import androidx.compose.ui.res.stringResource
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -110,9 +111,9 @@ fun FavoritePngIcon(
             }
         ),
         contentDescription = contentDescription ?: if (isFavorite) {
-            "Remove from favourites"
+            stringResource(R.string.favorite_remove)
         } else {
-            "Add to favourites"
+            stringResource(R.string.favorite_add)
         },
         modifier = modifier
             .scale(scale)

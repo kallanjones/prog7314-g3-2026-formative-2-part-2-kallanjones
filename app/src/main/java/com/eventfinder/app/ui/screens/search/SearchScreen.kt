@@ -1,5 +1,8 @@
-﻿package com.eventfinder.app.ui.screens.search
+package com.eventfinder.app.ui.screens.search
 
+import androidx.compose.ui.res.pluralStringResource
+import com.eventfinder.app.R
+import androidx.compose.ui.res.stringResource
 import com.eventfinder.app.ui.theme.LocalAccentText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -82,7 +85,7 @@ fun SearchScreen(
                     .padding(horizontal = 20.dp, vertical = 18.dp)
             ) {
                 Text(
-                    text = "Find your next experience",
+                    text = stringResource(R.string.search_find_your_next_experience),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.onBackground
@@ -91,7 +94,7 @@ fun SearchScreen(
                 Spacer(Modifier.height(6.dp))
 
                 Text(
-                    text = "Search events happening around South Africa.",
+                    text = stringResource(R.string.search_search_events_happening_around_south),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -102,12 +105,12 @@ fun SearchScreen(
                     value = state.query,
                     onValueChange = viewModel::onQueryChange,
                     placeholder = {
-                        Text("Search concerts, markets, festivals...")
+                        Text(stringResource(R.string.search_search_concerts_markets_festivals))
                     },
                     leadingIcon = {
                         Icon(
                             Icons.Outlined.Search,
-                            contentDescription = "Search"
+                            contentDescription = stringResource(R.string.search_title)
                         )
                     },
                     trailingIcon = {
@@ -120,7 +123,7 @@ fun SearchScreen(
                             ) {
                                 Icon(
                                     Icons.Outlined.Close,
-                                    contentDescription = "Clear search"
+                                    contentDescription = stringResource(R.string.clear_search)
                                 )
                             }
                         }
@@ -156,7 +159,7 @@ fun SearchScreen(
                             )
                         },
                         label = {
-                            Text(if (state.queryIsSaved) "Saved" else "Save this search")
+                            Text(if (state.queryIsSaved) stringResource(R.string.search_saved) else stringResource(R.string.search_save_this_search))
                         }
                     )
                 }
@@ -165,7 +168,7 @@ fun SearchScreen(
             if (state.savedSearches.isNotEmpty()) {
 
                 Text(
-                    text = "Saved searches",
+                    text = stringResource(R.string.search_saved_searches),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 20.dp)
@@ -196,7 +199,7 @@ fun SearchScreen(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.Close,
-                                        contentDescription = "Remove saved search $term",
+                                        contentDescription = stringResource(R.string.search_remove_saved_named, term),
                                         modifier = Modifier.size(14.dp)
                                     )
                                 }
@@ -218,13 +221,13 @@ fun SearchScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "Recent searches",
+                        stringResource(R.string.recent_searches),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
 
                     TextButton(onClick = viewModel::clearHistory) {
-                        Text("Clear")
+                        Text(stringResource(R.string.search_clear))
                     }
                 }
 
@@ -256,16 +259,16 @@ fun SearchScreen(
             ) {
                 Text(
                     text = if (state.query.isBlank()) {
-                        "Popular events"
+                        stringResource(R.string.search_popular_events)
                     } else {
-                        "Search results"
+                        stringResource(R.string.search_search_results)
                     },
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
 
                 Text(
-                    text = "${state.results.size} found",
+                    text = pluralStringResource(R.plurals.search_found_count, state.results.size, state.results.size),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -274,14 +277,14 @@ fun SearchScreen(
             if (state.results.isEmpty() && state.query.isNotBlank()) {
                 EmptyState(
                     icon = Icons.Outlined.SearchOff,
-                    title = "No events found",
-                    subtitle = "Try another search term."
+                    title = stringResource(R.string.no_events),
+                    subtitle = stringResource(R.string.search_try_another_search_term)
                 )
             } else if (state.results.isEmpty()) {
                 EmptyState(
                     icon = Icons.Outlined.Search,
-                    title = "No popular events yet",
-                    subtitle = "Check back soon for new events."
+                    title = stringResource(R.string.search_no_popular_events_yet),
+                    subtitle = stringResource(R.string.search_check_back_soon_for_new)
                 )
             } else {
                 // Two columns on tablets/foldables, one on phones — matches Home.

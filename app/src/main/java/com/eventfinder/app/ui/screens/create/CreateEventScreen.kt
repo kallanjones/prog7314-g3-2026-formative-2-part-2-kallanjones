@@ -1,4 +1,4 @@
-﻿package com.eventfinder.app.ui.screens.create
+package com.eventfinder.app.ui.screens.create
 
 import com.eventfinder.app.ui.theme.LocalAccentText
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -252,15 +252,15 @@ fun CreateEventScreen(
                 ) {
                     Text(
                         text = when (state.step) {
-                            1 -> "Event details"
-                            2 -> "Date and location"
-                            else -> "Review and publish"
+                            1 -> stringResource(R.string.create_event_details)
+                            2 -> stringResource(R.string.create_date_and_location)
+                            else -> stringResource(R.string.create_review_and_publish)
                         },
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Step ${state.step} of $CREATE_STEPS",
+                        text = stringResource(R.string.step_x_of_y, state.step, CREATE_STEPS),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -448,7 +448,7 @@ private fun StepDateVenue(
     // page, so an organiser can publish "every week" without re-creating it.
     Column(Modifier.fillMaxWidth()) {
         Text(
-            "Repeats",
+            stringResource(R.string.create_repeats),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -458,10 +458,10 @@ private fun StepDateVenue(
             modifier = Modifier.horizontalScroll(rememberScrollState())
         ) {
             listOf(
-                null to "One-off",
-                "weekly" to "Weekly",
-                "fortnightly" to "Fortnightly",
-                "monthly" to "Monthly"
+                null to stringResource(R.string.create_one_off),
+                "weekly" to stringResource(R.string.create_repeat_weekly),
+                "fortnightly" to stringResource(R.string.create_repeat_fortnightly),
+                "monthly" to stringResource(R.string.create_repeat_monthly)
             ).forEach { (rule, label) ->
                 FilterChip(
                     selected = state.recurrenceRule == rule,

@@ -1,5 +1,7 @@
 package com.eventfinder.app.ui.screens.safety
 
+import com.eventfinder.app.R
+import androidx.compose.ui.res.stringResource
 import com.eventfinder.app.ui.theme.LocalAccentText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -162,10 +164,10 @@ fun ReportScamScreen(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Report Scam", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.safety_report_scam), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -199,14 +201,14 @@ fun ReportScamScreen(
 
             Spacer(Modifier.height(16.dp))
             Text(
-                text = "Report a Scam",
+                text = stringResource(R.string.safety_report_a_scam),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                text = "Help keep EventFinder safe for everyone. Report suspicious activity, fake events or fraud.",
+                text = stringResource(R.string.safety_help_keep_eventfinder_safe_for),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -216,7 +218,7 @@ fun ReportScamScreen(
 
             SCAM_REASONS.forEach { reason ->
                 ScamReasonRow(
-                    label = reason,
+                    label = scamReasonLabel(reason),
                     selected = selected == reason,
                     onClick = { selected = reason }
                 )
@@ -227,7 +229,7 @@ fun ReportScamScreen(
             OutlinedTextField(
                 value = details,
                 onValueChange = { if (it.length <= 500) details = it },
-                placeholder = { Text("Add more details (optional)...") },
+                placeholder = { Text(stringResource(R.string.safety_add_more_details_optional)) },
                 supportingText = {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                         Text("${details.length}/500", style = MaterialTheme.typography.labelSmall)
@@ -244,15 +246,15 @@ fun ReportScamScreen(
             )
 
             Spacer(Modifier.height(16.dp))
-            BrandPrimaryButton(if (vm.isSubmitting) "Submitting…" else "Submit Report") {
+            BrandPrimaryButton(if (vm.isSubmitting) stringResource(R.string.detail_submitting) else stringResource(R.string.safety_submit_report)) {
                 vm.submit(selected, details) {
                     android.widget.Toast
-                        .makeText(context, "Report submitted", android.widget.Toast.LENGTH_SHORT)
+                        .makeText(context, context.getString(R.string.report_submitted), android.widget.Toast.LENGTH_SHORT)
                         .show()
                     onBack()
                 }
             }
-            BrandTextAction("Cancel", onBack)
+            BrandTextAction(stringResource(R.string.cancel), onBack)
         }
     }
 }
@@ -336,10 +338,10 @@ fun ModerationScreen(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Moderation", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.safety_moderation), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -365,18 +367,18 @@ fun ModerationScreen(
                 Tab(
                     selected = tab == 0,
                     onClick = { tab = 0 },
-                    text = { Text("Reports (${state.reports.size})", fontWeight = FontWeight.SemiBold) }
+                    text = { Text(stringResource(R.string.safety_reports_count, state.reports.size), fontWeight = FontWeight.SemiBold) }
                 )
                 Tab(
                     selected = tab == 1,
                     onClick = { tab = 1 },
-                    text = { Text("Actions (${resolved.size})", fontWeight = FontWeight.SemiBold) }
+                    text = { Text(stringResource(R.string.safety_actions_count, resolved.size), fontWeight = FontWeight.SemiBold) }
                 )
             }
 
             if (tab == 0) {
                 if (visible.isEmpty()) {
-                    EmptyModeration(if (filter == "Resolved") "No resolved reports yet" else "No open reports")
+                    EmptyModeration(if (filter == "Resolved") stringResource(R.string.safety_no_resolved_reports) else stringResource(R.string.safety_no_open_reports))
                 } else {
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                         items(visible, key = { it.id }) { report ->
@@ -397,23 +399,23 @@ fun ModerationScreen(
             } else {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text(
-                        "Actions",
+                        stringResource(R.string.safety_actions),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Resolved reports stay in the archive so you can review past decisions. " +
-                            "Reopen one from the Reports tab if a case needs another look.",
+                        stringResource(R.string.safety_resolved_reports_stay_in_the) +
+                            stringResource(R.string.safety_reopen_one_from_the_reports),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(16.dp))
-                    ActionSummary(Icons.Outlined.TaskAlt, "Resolved", resolved.size)
-                    ActionSummary(Icons.Outlined.Pending, "Pending", pending.size)
+                    ActionSummary(Icons.Outlined.TaskAlt, stringResource(R.string.safety_resolved), resolved.size)
+                    ActionSummary(Icons.Outlined.Pending, stringResource(R.string.safety_pending), pending.size)
                     Spacer(Modifier.height(16.dp))
-                    BrandOutlineButton("Export report history") { }
+                    BrandOutlineButton(stringResource(R.string.safety_export_report_history)) { }
                 }
             }
         }
@@ -482,13 +484,13 @@ private fun ModerationRow(
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = report.reason.substringBefore(':').ifBlank { "Scam alert" },
+                    text = report.reason.substringBefore(':').ifBlank { stringResource(R.string.safety_scam_alert) },
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
-                    text = "${timeAgo(report.createdAt)} ago · ${report.targetType}",
+                    text = "${android.text.format.DateUtils.getRelativeTimeSpanString(report.createdAt)} · ${report.targetType}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -500,7 +502,7 @@ private fun ModerationRow(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = if (report.resolved) "Resolved" else "Review",
+                    text = if (report.resolved) stringResource(R.string.safety_resolved) else stringResource(R.string.safety_review),
                     style = MaterialTheme.typography.labelLarge,
                     color = LocalAccentText.current,
                     fontWeight = FontWeight.SemiBold
@@ -520,13 +522,13 @@ private fun ModerationRow(
             Spacer(Modifier.height(10.dp))
             val detail = report.reason.substringAfter(':', "").trim()
             Text(
-                text = detail.ifBlank { "No additional details were provided." },
+                text = detail.ifBlank { stringResource(R.string.safety_no_additional_details_were_provided) },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(10.dp))
             BrandDangerButton(
-                text = if (report.resolved) "Reopen report" else "Mark as resolved",
+                text = if (report.resolved) stringResource(R.string.safety_reopen_report) else stringResource(R.string.safety_mark_as_resolved),
                 onClick = onToggleResolved
             )
         }
@@ -543,9 +545,9 @@ private fun ModerationFooter(filter: String, onFilterChange: (String) -> Unit) {
                 .padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            FilterTab("Pending", Icons.Outlined.Pending, filter, onFilterChange)
-            FilterTab("Resolved", Icons.Outlined.TaskAlt, filter, onFilterChange)
-            FilterTab("All", Icons.Outlined.History, filter, onFilterChange)
+            FilterTab("Pending", stringResource(R.string.safety_pending), Icons.Outlined.Pending, filter, onFilterChange)
+            FilterTab("Resolved", stringResource(R.string.safety_resolved), Icons.Outlined.TaskAlt, filter, onFilterChange)
+            FilterTab("All", stringResource(R.string.safety_all), Icons.Outlined.History, filter, onFilterChange)
         }
     }
 }
@@ -553,6 +555,7 @@ private fun ModerationFooter(filter: String, onFilterChange: (String) -> Unit) {
 @Composable
 private fun FilterTab(
     label: String,
+    text: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     current: String,
     onSelect: (String) -> Unit
@@ -572,19 +575,19 @@ private fun FilterTab(
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = label,
+            text = text,
             style = MaterialTheme.typography.labelSmall,
             color = if (selected) BrandGreen else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
 
-private fun timeAgo(createdAt: Long): String {
-    val minutes = ((System.currentTimeMillis() - createdAt) / 60_000).coerceAtLeast(0)
-    return when {
-        minutes < 1 -> "just now"
-        minutes < 60 -> "${minutes}m"
-        minutes < 1_440 -> "${minutes / 60}h"
-        else -> "${minutes / 1_440}d"
-    }
+/** Translated text for a scam reason; the English reason is what gets stored with the report. */
+@Composable
+private fun scamReasonLabel(reason: String): String = when (reason) {
+    "Fake event listings" -> stringResource(R.string.safety_reason_fake_listings)
+    "Payment scams" -> stringResource(R.string.safety_reason_payment_scams)
+    "Suspicious organizers" -> stringResource(R.string.safety_reason_suspicious_organizers)
+    "Other suspicious activity" -> stringResource(R.string.safety_reason_other)
+    else -> reason
 }

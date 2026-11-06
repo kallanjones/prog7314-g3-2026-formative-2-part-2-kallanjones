@@ -108,7 +108,7 @@ fun EditProfileScreen(
                 },
                 modifier = Modifier.fillMaxWidth()
             )
-            Text("Avatar style", style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.edit_profile_avatar_style), style = MaterialTheme.typography.titleSmall)
             Box(
                 modifier = Modifier.size(72.dp).clip(androidx.compose.foundation.shape.CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
@@ -118,18 +118,18 @@ fun EditProfileScreen(
                 when (state.avatarType) {
                     "male" -> androidx.compose.foundation.Image(
                         painter = androidx.compose.ui.res.painterResource(R.drawable.avatar_male),
-                        contentDescription = "Profile avatar, male",
+                        contentDescription = stringResource(R.string.edit_profile_profile_avatar_male),
                         modifier = Modifier.size(72.dp)
                     )
                     "female" -> androidx.compose.foundation.Image(
                         painter = androidx.compose.ui.res.painterResource(R.drawable.avatar_female),
-                        contentDescription = "Profile avatar, female",
+                        contentDescription = stringResource(R.string.edit_profile_profile_avatar_female),
                         modifier = Modifier.size(72.dp)
                     )
                     "uploaded" -> if (!url.isNullOrBlank()) {
                         AsyncImage(
                             model = url,
-                            contentDescription = "Profile avatar, uploaded photo",
+                            contentDescription = stringResource(R.string.edit_profile_profile_avatar_uploaded_photo),
                             contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                             modifier = Modifier.size(72.dp).clip(androidx.compose.foundation.shape.CircleShape)
                         )
@@ -146,17 +146,17 @@ fun EditProfileScreen(
                 FilterChip(
                     selected = state.avatarType == "initials",
                     onClick = { viewModel.onAvatarTypeChange("initials") },
-                    label = { Text("Use initials", style = MaterialTheme.typography.labelMedium) }
+                    label = { Text(stringResource(R.string.edit_profile_use_initials), style = MaterialTheme.typography.labelMedium) }
                 )
                 FilterChip(
                     selected = state.avatarType == "male",
                     onClick = { viewModel.onAvatarTypeChange("male") },
-                    label = { Text("Default style 1", style = MaterialTheme.typography.labelMedium) }
+                    label = { Text(stringResource(R.string.edit_profile_default_style_1), style = MaterialTheme.typography.labelMedium) }
                 )
                 FilterChip(
                     selected = state.avatarType == "female",
                     onClick = { viewModel.onAvatarTypeChange("female") },
-                    label = { Text("Default style 2", style = MaterialTheme.typography.labelMedium) }
+                    label = { Text(stringResource(R.string.edit_profile_default_style_2), style = MaterialTheme.typography.labelMedium) }
                 )
             }
             Row(
@@ -172,13 +172,13 @@ fun EditProfileScreen(
                             )
                         )
                     },
-                    label = { Text(if (state.avatarUploading) "Uploading..." else "Upload photo", style = MaterialTheme.typography.labelMedium) },
+                    label = { Text(if (state.avatarUploading) stringResource(R.string.edit_profile_uploading) else stringResource(R.string.edit_profile_upload_photo), style = MaterialTheme.typography.labelMedium) },
                     enabled = !state.avatarUploading
                 )
                 FilterChip(
                     selected = state.avatarType == "initials" && (state.avatarUrl == null && state.avatarImageUrl == null),
                     onClick = { viewModel.onAvatarTypeChange("initials") },
-                    label = { Text("Remove avatar", style = MaterialTheme.typography.labelMedium) }
+                    label = { Text(stringResource(R.string.edit_profile_remove_avatar), style = MaterialTheme.typography.labelMedium) }
                 )
             }
 
@@ -208,7 +208,7 @@ fun EditProfileScreen(
             OutlinedTextField(
                 value = state.verificationToken,
                 onValueChange = viewModel::onVerificationTokenChange,
-                label = { Text("Email verification token") },
+                label = { Text(stringResource(R.string.email_verification_token)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -220,7 +220,7 @@ fun EditProfileScreen(
                 if (state.verifying) {
                     CircularProgressIndicator(Modifier.height(20.dp).width(20.dp))
                 } else {
-                    Text("Verify email change")
+                    Text(stringResource(R.string.edit_profile_verify_email_change))
                 }
             }
         }

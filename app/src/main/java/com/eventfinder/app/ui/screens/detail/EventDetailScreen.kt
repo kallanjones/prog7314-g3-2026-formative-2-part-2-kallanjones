@@ -1,4 +1,4 @@
-﻿package com.eventfinder.app.ui.screens.detail
+package com.eventfinder.app.ui.screens.detail
 
 import com.eventfinder.app.ui.theme.LocalAccentText
 import android.content.ClipData
@@ -316,7 +316,7 @@ fun EventDetailScreen(
                                                 }
                                             )
                                             DropdownMenuItem(
-                                                text = { Text("Export RSVPs") },
+                                                text = { Text(stringResource(R.string.detail_export_rsvps)) },
                                                 onClick = {
                                                     showOwnerMenu = false
                                                     showExportSheet = true
@@ -418,7 +418,7 @@ fun EventDetailScreen(
                             if (eventEnded) {
                                 Spacer(Modifier.height(8.dp))
                                 StatusChip(
-                                    label = "Event Ended",
+                                    label = stringResource(R.string.detail_event_ended),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -429,7 +429,7 @@ fun EventDetailScreen(
                             if (!event.recurrenceRule.isNullOrBlank()) {
                                 Spacer(Modifier.height(8.dp))
                                 StatusChip(
-                                    label = "Repeats ${event.recurrenceRule}",
+                                    label = stringResource(R.string.detail_repeats_rule, event.recurrenceRule.orEmpty()),
                                     color = LocalAccentText.current
                                 )
                             }
@@ -444,25 +444,25 @@ fun EventDetailScreen(
                                     if (event.wheelchairAccessible) {
                                         AccessibilityChip(
                                             icon = Icons.Outlined.Accessible,
-                                            label = "Wheelchair access"
+                                            label = stringResource(R.string.detail_wheelchair_access)
                                         )
                                     }
                                     if (event.sensoryFriendly) {
                                         AccessibilityChip(
                                             icon = Icons.Outlined.Spa,
-                                            label = "Sensory friendly"
+                                            label = stringResource(R.string.detail_sensory_friendly)
                                         )
                                     }
                                     if (event.loudMusic) {
                                         AccessibilityChip(
                                             icon = Icons.Outlined.VolumeUp,
-                                            label = "Loud music"
+                                            label = stringResource(R.string.detail_loud_music)
                                         )
                                     }
                                     if (event.strobeLights) {
                                         AccessibilityChip(
                                             icon = Icons.Outlined.FlashOn,
-                                            label = "Strobe lights"
+                                            label = stringResource(R.string.detail_strobe_lights)
                                         )
                                     }
                                 }
@@ -511,7 +511,7 @@ fun EventDetailScreen(
                             Spacer(Modifier.height(8.dp))
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Image(painter = painterResource(R.drawable.evt_calendar), contentDescription = "Date", modifier = Modifier.size(20.dp))
+                                Image(painter = painterResource(R.drawable.evt_calendar), contentDescription = stringResource(R.string.sort_date), modifier = Modifier.size(20.dp))
                                 Spacer(Modifier.size(6.dp))
                                 Text(
                                     DateTimeUtils.formatFullDateTime(event.startDate),
@@ -541,7 +541,7 @@ fun EventDetailScreen(
                             Spacer(Modifier.height(6.dp))
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Image(painter = painterResource(R.drawable.evt_venue), contentDescription = "Location", modifier = Modifier.size(20.dp))
+                                Image(painter = painterResource(R.drawable.evt_venue), contentDescription = stringResource(R.string.detail_location), modifier = Modifier.size(20.dp))
                                 Spacer(Modifier.size(6.dp))
                                 Text(event.venueName, style = MaterialTheme.typography.bodyMedium)
                             }
@@ -559,7 +559,7 @@ fun EventDetailScreen(
                                     .clickable { onOrganizerClick(event.organizerId) }
                                     .padding(vertical = 4.dp)
                             ) {
-                                Image(painter = painterResource(R.drawable.usr_account), contentDescription = "Organizer", modifier = Modifier.size(20.dp))
+                                Image(painter = painterResource(R.drawable.usr_account), contentDescription = stringResource(R.string.organizer), modifier = Modifier.size(20.dp))
                                 Spacer(Modifier.size(6.dp))
                                 Text(stringResource(R.string.organizer), style = MaterialTheme.typography.labelMedium)
                                 Spacer(Modifier.size(4.dp))
@@ -572,7 +572,7 @@ fun EventDetailScreen(
                                 )
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Image(painter = painterResource(R.drawable.evt_attendees), contentDescription = "Attendees", modifier = Modifier.size(20.dp))
+                                Image(painter = painterResource(R.drawable.evt_attendees), contentDescription = stringResource(R.string.attendees), modifier = Modifier.size(20.dp))
                                 Spacer(Modifier.size(6.dp))
                                 Text(
                                     "${event.attendeeCount} ${stringResource(R.string.attendees)}",
@@ -651,7 +651,7 @@ fun EventDetailScreen(
                                         IconButton(onClick = { viewModel.setReviewRating(star) }) {
                                             InteractivePngIcon(
                                                 iconRes = R.drawable.evt_rating,
-                                                contentDescription = "$star star rating",
+                                                contentDescription = stringResource(R.string.detail_star_rating, star),
                                                 active = state.reviewDraftRating >= star,
                                                 size = 30.dp
                                             )
@@ -778,7 +778,7 @@ fun EventDetailScreen(
                                                     ) {
                                                         Icon(
                                                             painter = painterResource(R.drawable.ic_ms_block),
-                                                            contentDescription = "Block this reviewer",
+                                                            contentDescription = stringResource(R.string.detail_block_this_reviewer),
                                                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                                             modifier = Modifier.size(16.dp)
                                                         )
@@ -832,7 +832,7 @@ fun EventDetailScreen(
                                 )
                                 Spacer(Modifier.size(8.dp))
                                 Text(
-                                    if (state.myTicket != null) "View My Ticket"
+                                    if (state.myTicket != null) stringResource(R.string.detail_view_my_ticket)
                                     else stringResource(R.string.get_tickets),
                                     fontWeight = FontWeight.Bold
                                 )
@@ -878,12 +878,12 @@ fun EventDetailScreen(
                                 Spacer(Modifier.size(12.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(
-                                        text = "Skip reminders",
+                                        text = stringResource(R.string.detail_skip_reminders),
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.SemiBold
                                     )
                                     Text(
-                                        text = "For this event only",
+                                        text = stringResource(R.string.detail_for_this_event_only),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -915,14 +915,15 @@ fun EventDetailScreen(
                                         Spacer(Modifier.size(12.dp))
                                         Column {
                                             Text(
-                                                text = "This event has ended",
+                                                text = stringResource(R.string.detail_this_event_has_ended),
                                                 style = MaterialTheme.typography.titleSmall,
                                                 fontWeight = FontWeight.SemiBold
                                             )
                                             Text(
-                                                text = "It took place on " +
-                                                    com.eventfinder.app.utils.DateTimeUtils.formatShortDate(event.startDate) +
-                                                    ". You can still browse similar events below.",
+                                                text = stringResource(
+                                                    R.string.detail_event_ended_on,
+                                                    com.eventfinder.app.utils.DateTimeUtils.formatShortDate(event.startDate)
+                                                ),
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
@@ -964,9 +965,9 @@ fun EventDetailScreen(
                                      onClick = { onOpenScanner(event.id) },
                                      modifier = Modifier.fillMaxWidth().height(44.dp)
                                  ) {
-                                     Icon(Icons.Outlined.QrCodeScanner, contentDescription = "Check-in scanner")
+                                     Icon(Icons.Outlined.QrCodeScanner, contentDescription = stringResource(R.string.detail_check_in_scanner))
                                      Spacer(Modifier.size(6.dp))
-                                     Text("Check-in Attendees")
+                                     Text(stringResource(R.string.detail_check_in_attendees))
                                  }
                                  Spacer(Modifier.height(8.dp))
                              }
@@ -1011,7 +1012,7 @@ fun EventDetailScreen(
 
                             if (event.ageRestricted) {
                                 Text(
-                                    "Age-restricted event (18+)",
+                                    stringResource(R.string.detail_age_restricted_event_18),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.error
                                 )
@@ -1038,7 +1039,7 @@ fun EventDetailScreen(
                             if (state.similarEvents.isNotEmpty()) {
                                 Spacer(Modifier.height(24.dp))
                                 Text(
-                                    "Similar events",
+                                    stringResource(R.string.detail_similar_events),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -1106,14 +1107,14 @@ fun EventDetailScreen(
                         }
                         Spacer(Modifier.height(16.dp))
                         Text(
-                            text = "You're Going!",
+                            text = stringResource(R.string.detail_you_re_going),
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             color = com.eventfinder.app.ui.components.EventFinderTokens.TextPrimary
                         )
                         Spacer(Modifier.height(6.dp))
                         Text(
-                            text = "You've successfully RSVP'd to ${rsvpEvent.event.title}.",
+                            text = stringResource(R.string.detail_rsvp_success, rsvpEvent.event.title),
                             style = MaterialTheme.typography.bodyMedium,
                             color = com.eventfinder.app.ui.components.EventFinderTokens.TextSecondary,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -1128,7 +1129,7 @@ fun EventDetailScreen(
                                 contentColor = com.eventfinder.app.ui.components.EventFinderTokens.Night
                             )
                         ) {
-                            Text("View Event", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.detail_view_event), fontWeight = FontWeight.Bold)
                             Spacer(Modifier.size(8.dp))
                             Icon(
                                 painter = painterResource(R.drawable.ic_ms_arrow_forward),
@@ -1207,7 +1208,7 @@ fun EventDetailScreen(
 
                     Spacer(Modifier.height(18.dp))
                     Text(
-                        text = "RSVP to this event",
+                        text = stringResource(R.string.detail_rsvp_to_this_event),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = com.eventfinder.app.ui.components.EventFinderTokens.TextPrimary
@@ -1244,7 +1245,7 @@ fun EventDetailScreen(
                         )
                         Spacer(Modifier.width(10.dp))
                         Text(
-                            text = "Notify me about updates",
+                            text = stringResource(R.string.detail_notify_me_about_updates),
                             style = MaterialTheme.typography.bodyMedium,
                             color = com.eventfinder.app.ui.components.EventFinderTokens.TextPrimary,
                             modifier = Modifier.weight(1f)
@@ -1280,16 +1281,16 @@ fun EventDetailScreen(
                     if (rsvpClosed) {
                         Spacer(Modifier.height(14.dp))
                         RsvpStatusNotice(
-                            title = "RSVP Closed",
-                            subtitle = "This event is no longer accepting RSVPs.",
+                            title = stringResource(R.string.detail_rsvp_closed),
+                            subtitle = stringResource(R.string.detail_this_event_is_no_longer),
                             accent = com.eventfinder.app.ui.components.EventFinderTokens.TextSecondary,
                             icon = R.drawable.ic_ms_info
                         )
                     } else if (saving) {
                         Spacer(Modifier.height(14.dp))
                         RsvpStatusNotice(
-                            title = "Submitting RSVP…",
-                            subtitle = "Please wait a moment.",
+                            title = stringResource(R.string.detail_submitting_rsvp),
+                            subtitle = stringResource(R.string.detail_please_wait_a_moment),
                             accent = com.eventfinder.app.ui.components.EventFinderTokens.Green,
                             loading = true
                         )
@@ -1298,8 +1299,8 @@ fun EventDetailScreen(
                     if (rsvpError) {
                         Spacer(Modifier.height(14.dp))
                         RsvpStatusNotice(
-                            title = "Failed to RSVP",
-                            subtitle = "Something went wrong. Please try again.",
+                            title = stringResource(R.string.detail_failed_to_rsvp),
+                            subtitle = stringResource(R.string.detail_something_went_wrong_please_try),
                             accent = com.eventfinder.app.ui.components.EventFinderTokens.ErrorRed,
                             icon = R.drawable.ic_ms_warning,
                             onRetry = {
@@ -1334,7 +1335,7 @@ fun EventDetailScreen(
                                 color = com.eventfinder.app.ui.components.EventFinderTokens.Night
                             )
                             Spacer(Modifier.width(10.dp))
-                            Text("Submitting…", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.detail_submitting), fontWeight = FontWeight.Bold)
                         } else {
                             Icon(
                                 painter = painterResource(R.drawable.ic_ms_check_circle),
@@ -1343,7 +1344,7 @@ fun EventDetailScreen(
                             )
                             Spacer(Modifier.width(8.dp))
                             Text(
-                                if (rsvpClosed) "RSVP Closed" else "Confirm RSVP",
+                                if (rsvpClosed) stringResource(R.string.detail_rsvp_closed) else stringResource(R.string.detail_confirm_rsvp),
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -1382,7 +1383,7 @@ fun EventDetailScreen(
                     "${DateTimeUtils.formatFullDateTime(shareEvent.startDate)}\n" +
                     "${shareEvent.venueName}, ${shareEvent.address}\n" +
                     (shareEvent.sourceUrl?.let { "$it\n" } ?: "") +
-                    "\nDiscover via EventFinder",
+                    stringResource(R.string.detail_discover_via_eventfinder),
                 link = shareEvent.sourceUrl,
                 onDismiss = { showShareSheet = false }
             )
@@ -1694,10 +1695,10 @@ private fun StatusChip(label: String, color: Color) {
 @Composable
 private fun ProvenanceBadge(provenance: String) {
     val (label, color) = when (provenance.lowercase()) {
-        "live" -> "Live" to AccentGreen
-        "cached" -> "Cached" to GoogleBlue
-        "imported" -> "Imported" to WarningAmber
-        else -> "Sample" to SlateGrey
+        "live" -> stringResource(R.string.detail_provenance_live) to AccentGreen
+        "cached" -> stringResource(R.string.detail_provenance_cached) to GoogleBlue
+        "imported" -> stringResource(R.string.detail_provenance_imported) to WarningAmber
+        else -> stringResource(R.string.detail_sample) to SlateGrey
     }
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -1753,7 +1754,7 @@ private fun WeatherCard(state: EventDetailUiState) {
         ) {
             Image(
                 painter = painterResource(R.drawable.evt_weather),
-                contentDescription = "Weather",
+                contentDescription = stringResource(R.string.detail_weather),
                 modifier = Modifier.size(30.dp)
             )
             Spacer(Modifier.size(10.dp))
@@ -1900,7 +1901,7 @@ private fun GroupPlanningCard(
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Going together?",
+                    text = stringResource(R.string.detail_going_together),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = titleColor,
@@ -1909,7 +1910,7 @@ private fun GroupPlanningCard(
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    text = if (members.isEmpty()) "Bring your crew along"
+                    text = if (members.isEmpty()) stringResource(R.string.detail_bring_your_crew_along)
                     else "${members.size} going",
                     style = MaterialTheme.typography.labelSmall,
                     color = subtitleColor,
@@ -1939,7 +1940,7 @@ private fun GroupPlanningCard(
                 )
                 Spacer(Modifier.size(6.dp))
                 Text(
-                    text = "Invite Friends",
+                    text = stringResource(R.string.detail_invite_friends),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold
                 )

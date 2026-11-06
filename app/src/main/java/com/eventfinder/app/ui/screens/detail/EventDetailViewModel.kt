@@ -203,7 +203,7 @@ class EventDetailViewModel(
         viewModelScope.launch {
             container.reportRepository.block(userId, authorId)
             loadBlockedUsers()
-            _messages.emit(UiMessage.Literal("Reviewer blocked"))
+            _messages.emit(UiMessage.Resource(R.string.msg_reviewer_blocked))
         }
     }
 
@@ -419,7 +419,8 @@ class EventDetailViewModel(
             }
             _messages.emit(
                 if (result.isSuccess) UiMessage.Resource(R.string.review_submitted)
-                else UiMessage.Literal(result.exceptionOrNull()?.message ?: "review_failed")
+                else result.exceptionOrNull()?.message?.let { UiMessage.Literal(it) }
+                    ?: UiMessage.Resource(R.string.review_failed)
             )
         }
     }

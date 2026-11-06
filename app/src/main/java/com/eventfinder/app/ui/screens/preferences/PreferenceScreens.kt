@@ -1,5 +1,8 @@
 package com.eventfinder.app.ui.screens.preferences
 
+import com.eventfinder.app.ui.components.categoryLabel
+import com.eventfinder.app.R
+import androidx.compose.ui.res.stringResource
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -92,11 +95,11 @@ fun CommutePreferencesScreen(container: AppContainer, onBack: () -> Unit) {
     val state by vm.state.collectAsState()
     val context = LocalContext.current
 
-    PreferenceScaffold(title = "Commute Preferences", onBack = onBack) {
+    PreferenceScaffold(title = stringResource(R.string.pref_commute_preferences), onBack = onBack) {
         PreferenceHeroIcon(Icons.Outlined.DirectionsCar)
         PreferenceHeading(
-            title = "Your Commute",
-            subtitle = "Set your preferred commute time to find events within your range."
+            title = stringResource(R.string.pref_your_commute),
+            subtitle = stringResource(R.string.pref_set_your_preferred_commute_time)
         )
 
         Row(
@@ -104,7 +107,7 @@ fun CommutePreferencesScreen(container: AppContainer, onBack: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                "Max commute time",
+                stringResource(R.string.pref_max_commute_time),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -127,27 +130,27 @@ fun CommutePreferencesScreen(container: AppContainer, onBack: () -> Unit) {
             )
         )
 
-        PreferenceSectionLabel("Travel Mode")
+        PreferenceSectionLabel(stringResource(R.string.pref_travel_mode))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            TravelModeCard("Car", "car", Icons.Outlined.DirectionsCar, state.mode, vm::setMode, Modifier.weight(1f))
-            TravelModeCard("Public\nTransport", "transit", Icons.Outlined.DirectionsBus, state.mode, vm::setMode, Modifier.weight(1f))
-            TravelModeCard("Walking", "walking", Icons.Outlined.DirectionsWalk, state.mode, vm::setMode, Modifier.weight(1f))
-            TravelModeCard("Cycling", "cycling", Icons.Outlined.DirectionsBike, state.mode, vm::setMode, Modifier.weight(1f))
+            TravelModeCard(stringResource(R.string.pref_car), "car", Icons.Outlined.DirectionsCar, state.mode, vm::setMode, Modifier.weight(1f))
+            TravelModeCard(stringResource(R.string.pref_public_transport), "transit", Icons.Outlined.DirectionsBus, state.mode, vm::setMode, Modifier.weight(1f))
+            TravelModeCard(stringResource(R.string.pref_walking), "walking", Icons.Outlined.DirectionsWalk, state.mode, vm::setMode, Modifier.weight(1f))
+            TravelModeCard(stringResource(R.string.pref_cycling), "cycling", Icons.Outlined.DirectionsBike, state.mode, vm::setMode, Modifier.weight(1f))
         }
 
         Spacer(Modifier.height(16.dp))
         PreferenceToggleBlock(
-            title = "Include events near transit",
+            title = stringResource(R.string.pref_include_events_near_transit),
             checked = state.nearTransit,
             onCheckedChange = vm::setNearTransit
         )
 
         Spacer(Modifier.height(20.dp))
-        BrandPrimaryButton("Save Preferences") {
-            Toast.makeText(context, "Commute preferences saved", Toast.LENGTH_SHORT).show()
+        BrandPrimaryButton(stringResource(R.string.a11y_save_preferences)) {
+            Toast.makeText(context, context.getString(R.string.pref_commute_preferences_saved), Toast.LENGTH_SHORT).show()
             onBack()
         }
         BottomActionSpacer()
@@ -226,15 +229,6 @@ private val PRIMARY_INTERESTS = listOf(
     EventCategory.WELLNESS
 )
 
-private fun interestLabel(category: EventCategory): String = when (category) {
-    EventCategory.MUSIC -> "Music"
-    EventCategory.FOOD -> "Food & Drink"
-    EventCategory.SPORTS -> "Sports"
-    EventCategory.ARTS -> "Arts & Culture"
-    EventCategory.TECHNOLOGY -> "Technology"
-    EventCategory.WELLNESS -> "Health & Wellness"
-    else -> category.name.lowercase().replaceFirstChar { it.uppercase() }
-}
 
 /** "Interest Management — Your Interests". */
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
@@ -248,11 +242,11 @@ fun InterestsScreen(container: AppContainer, onBack: () -> Unit) {
 
     val shown = if (expanded) EventCategory.entries.filter { it != EventCategory.OTHER } else PRIMARY_INTERESTS
 
-    PreferenceScaffold(title = "Your Interests", onBack = onBack) {
+    PreferenceScaffold(title = stringResource(R.string.pref_your_interests), onBack = onBack) {
         PreferenceHeroIcon(Icons.Outlined.Interests)
         PreferenceHeading(
-            title = "Your Interests",
-            subtitle = "Select categories you're interested in."
+            title = stringResource(R.string.pref_your_interests),
+            subtitle = stringResource(R.string.pref_select_categories_you_re_interested)
         )
 
         androidx.compose.foundation.layout.FlowRow(
@@ -296,7 +290,7 @@ fun InterestsScreen(container: AppContainer, onBack: () -> Unit) {
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = interestLabel(category),
+                        text = stringResource(categoryLabel(category)),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onBackground,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -306,11 +300,11 @@ fun InterestsScreen(container: AppContainer, onBack: () -> Unit) {
         }
 
         Spacer(Modifier.height(14.dp))
-        BrandOutlineButton(if (expanded) "Show Less" else "＋  Show More") { expanded = !expanded }
+        BrandOutlineButton(if (expanded) stringResource(R.string.pref_show_less) else stringResource(R.string.pref_show_more)) { expanded = !expanded }
 
         Spacer(Modifier.height(18.dp))
-        BrandPrimaryButton("Save Interests") {
-            Toast.makeText(context, "Interests saved", Toast.LENGTH_SHORT).show()
+        BrandPrimaryButton(stringResource(R.string.pref_save_interests)) {
+            Toast.makeText(context, context.getString(R.string.pref_interests_saved), Toast.LENGTH_SHORT).show()
             onBack()
         }
         BottomActionSpacer()

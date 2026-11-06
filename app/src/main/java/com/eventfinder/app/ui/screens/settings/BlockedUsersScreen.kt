@@ -1,5 +1,7 @@
 package com.eventfinder.app.ui.screens.settings
 
+import com.eventfinder.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -71,17 +73,17 @@ fun BlockedUsersScreen(container: AppContainer, onBack: () -> Unit) {
             .collect { value = it }
     }
 
-    PreferenceScaffold(title = "Blocked Users", onBack = onBack) {
+    PreferenceScaffold(title = stringResource(R.string.blocked_blocked_users), onBack = onBack) {
         PreferenceHeroIcon(Icons.Outlined.Block)
         PreferenceHeading(
-            title = "Blocked Users",
-            subtitle = "Blocked people are hidden from your feed, events and reviews."
+            title = stringResource(R.string.blocked_blocked_users),
+            subtitle = stringResource(R.string.blocked_blocked_people_are_hidden_from)
         )
 
         if (blocked.isEmpty()) {
             Spacer(Modifier.height(24.dp))
             Text(
-                "You haven't blocked anyone.",
+                stringResource(R.string.blocked_you_haven_t_blocked_anyone),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -122,7 +124,7 @@ fun BlockedUsersScreen(container: AppContainer, onBack: () -> Unit) {
                             maxLines = 1
                         )
                         Text(
-                            text = "Blocked",
+                            text = stringResource(R.string.blocked_blocked),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -137,7 +139,7 @@ fun BlockedUsersScreen(container: AppContainer, onBack: () -> Unit) {
                         }
                     }
                 ) {
-                    Text("Unblock", color = BrandGreen, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.blocked_unblock), color = BrandGreen, fontWeight = FontWeight.SemiBold)
                 }
             }
         }

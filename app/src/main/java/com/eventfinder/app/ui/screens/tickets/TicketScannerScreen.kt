@@ -1,5 +1,7 @@
 package com.eventfinder.app.ui.screens.tickets
 
+import com.eventfinder.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.Composable
 import com.eventfinder.app.ui.theme.LocalAccentText
 import android.content.Intent
@@ -59,10 +61,10 @@ fun TicketScannerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Check-in", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.scanner_check_in), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -95,14 +97,14 @@ fun TicketScannerScreen(
 
             Spacer(Modifier.height(18.dp))
             Text(
-                "Scan QR Code for Check-in",
+                stringResource(R.string.scanner_scan_qr_code_for_check),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                "Point the scanner at the attendee's ticket, or type the ticket code below.",
+                stringResource(R.string.scanner_point_the_scanner_at_the),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -112,8 +114,8 @@ fun TicketScannerScreen(
             OutlinedTextField(
                 value = ticketCode,
                 onValueChange = { ticketCode = it.uppercase() },
-                label = { Text("Ticket code") },
-                placeholder = { Text("e.g. A1B2C3D4") },
+                label = { Text(stringResource(R.string.scanner_ticket_code)) },
+                placeholder = { Text(stringResource(R.string.scanner_e_g_a1b2c3d4)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp)
@@ -134,7 +136,7 @@ fun TicketScannerScreen(
                             checkedInTickets = ticketRepository.getAllTicketsForEvent(eventId)
                                 .filter { it.checkedInAt != null }
                         } else {
-                            val failure = result.exceptionOrNull()?.message ?: "Unknown error"
+                            val failure = result.exceptionOrNull()?.message ?: context.getString(R.string.scanner_unknown_error)
                             scanResult = ScanResult.Error(failure)
                             errorMessage = failure
                         }
@@ -154,7 +156,7 @@ fun TicketScannerScreen(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Verify & Check In", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.scanner_verify_check_in), fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -175,7 +177,7 @@ fun TicketScannerScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Checked-in attendees (${checkedInTickets.size})",
+                    stringResource(R.string.scanner_checked_in_count, checkedInTickets.size),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -202,13 +204,13 @@ fun TicketScannerScreen(
                                 putExtra(Intent.EXTRA_STREAM, uri)
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             }
-                            context.startActivity(Intent.createChooser(intent, "Export attendee CSV"))
+                            context.startActivity(Intent.createChooser(intent, context.getString(R.string.scanner_export_attendee_csv)))
                         }
                     }
                 ) {
                     Icon(Icons.Outlined.Download, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Export CSV")
+                    Text(stringResource(R.string.scanner_export_csv))
                 }
             }
             Spacer(Modifier.height(4.dp))
@@ -229,7 +231,7 @@ fun TicketScannerScreen(
                 Button(
                     onClick = { showSuccess = null },
                     shape = RoundedCornerShape(14.dp)
-                ) { Text("Done") }
+                ) { Text(stringResource(R.string.done)) }
             },
             text = {
             Column(
@@ -251,20 +253,20 @@ fun TicketScannerScreen(
                 }
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    "Checked In!",
+                    stringResource(R.string.scanner_checked_in),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.ExtraBold
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "You're all set. Enjoy the event.",
+                    stringResource(R.string.scanner_you_re_all_set_enjoy),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Ticket ${showSuccess?.ticketCode.orEmpty()}",
+                    stringResource(R.string.scanner_ticket_named, showSuccess?.ticketCode.orEmpty()),
                     style = MaterialTheme.typography.labelMedium,
                     color = BrandGreen
                 )
@@ -290,10 +292,10 @@ fun CheckedInTicketRow(ticket: EventTicket) {
             modifier = Modifier.size(18.dp)
         )
         Spacer(Modifier.width(8.dp))
-        Text("Ticket ${ticket.ticketCode}", style = MaterialTheme.typography.bodyMedium)
+        Text(stringResource(R.string.scanner_ticket_named, ticket.ticketCode), style = MaterialTheme.typography.bodyMedium)
         Spacer(Modifier.weight(1f))
         Text(
-            "Checked in",
+            stringResource(R.string.ticket_checked_in),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

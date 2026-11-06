@@ -357,8 +357,7 @@ fun EventCard(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = event.category.name.lowercase()
-                        .replaceFirstChar { it.uppercase() },
+                    text = stringResource(categoryLabel(event.category)),
                     style = MaterialTheme.typography.labelSmall,
                     color = LocalAccentText.current,
                     fontWeight = FontWeight.Bold

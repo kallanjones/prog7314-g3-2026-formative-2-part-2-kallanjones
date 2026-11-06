@@ -1,5 +1,7 @@
 package com.eventfinder.app.ui.screens.preferences
 
+import com.eventfinder.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -86,7 +88,7 @@ fun PreferenceScaffold(
                         IconButton(onClick = onBack) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = stringResource(R.string.back)
                             )
                         }
                     }
@@ -414,7 +416,7 @@ fun PreferenceSummaryRow(
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
-            color = if (value == "Off") MaterialTheme.colorScheme.onSurfaceVariant else BrandGreen
+            color = if (value == stringResource(R.string.a11y_off)) MaterialTheme.colorScheme.onSurfaceVariant else BrandGreen
         )
     }
 }

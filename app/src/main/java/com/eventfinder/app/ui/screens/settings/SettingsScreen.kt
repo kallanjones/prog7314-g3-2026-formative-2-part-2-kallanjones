@@ -215,9 +215,9 @@ fun SettingsScreen(
                         )
                         HorizontalDivider()
                         ListItem(
-                            headlineContent = { Text("Share crash log") },
+                            headlineContent = { Text(stringResource(R.string.settings_share_crash_log)) },
                             supportingContent = {
-                                Text("Most recent captured crash, shared only when you choose")
+                                Text(stringResource(R.string.settings_most_recent_captured_crash_shared))
                             },
                             leadingContent = {
                                 Icon(
@@ -232,7 +232,7 @@ fun SettingsScreen(
                                 if (report == null) {
                                     android.widget.Toast.makeText(
                                         context,
-                                        "No crash reports captured",
+                                        context.getString(R.string.settings_no_crash_reports_captured),
                                         android.widget.Toast.LENGTH_SHORT
                                     ).show()
                                 } else {
@@ -242,7 +242,7 @@ fun SettingsScreen(
                                         type = "text/plain"
                                         putExtra(
                                             android.content.Intent.EXTRA_SUBJECT,
-                                            "EventFinder crash report"
+                                            context.getString(R.string.settings_eventfinder_crash_report)
                                         )
                                         putExtra(
                                             android.content.Intent.EXTRA_TEXT,
@@ -252,7 +252,7 @@ fun SettingsScreen(
                                     context.startActivity(
                                         android.content.Intent.createChooser(
                                             intent,
-                                            "Share crash report"
+                                            context.getString(R.string.settings_share_crash_report)
                                         )
                                     )
                                 }
@@ -280,8 +280,8 @@ fun SettingsScreen(
             Card(Modifier.fillMaxWidth()) {
                 Column {
                     ListItem(
-                        headlineContent = { Text("Analytics consent") },
-                        supportingContent = { Text("Allow anonymous usage analytics") },
+                        headlineContent = { Text(stringResource(R.string.settings_analytics_consent)) },
+                        supportingContent = { Text(stringResource(R.string.settings_allow_anonymous_usage_analytics)) },
                         trailingContent = {
                             Switch(
                                 checked = state.analyticsConsent,
@@ -291,8 +291,8 @@ fun SettingsScreen(
                     )
                     HorizontalDivider()
                     ListItem(
-                        headlineContent = { Text("Location consent") },
-                        supportingContent = { Text("Allow location-based discovery") },
+                        headlineContent = { Text(stringResource(R.string.settings_location_consent)) },
+                        supportingContent = { Text(stringResource(R.string.settings_allow_location_based_discovery)) },
                         trailingContent = {
                             Switch(
                                 checked = state.locationConsent,
@@ -306,36 +306,36 @@ fun SettingsScreen(
             Card(Modifier.fillMaxWidth()) {
                 Column {
                     SettingsNavRow(
-                        title = "Accessibility",
-                        subtitle = "Make events more accessible for you",
+                        title = stringResource(R.string.a11y_accessibility),
+                        subtitle = stringResource(R.string.a11y_make_events_more_accessible_for),
                         icon = Icons.Outlined.Accessibility,
                         onClick = onOpenAccessibility
                     )
                     HorizontalDivider()
                     SettingsNavRow(
-                        title = "Accessibility profile",
-                        subtitle = "Wheelchair, noise, sensory and music needs",
+                        title = stringResource(R.string.settings_accessibility_profile),
+                        subtitle = stringResource(R.string.settings_wheelchair_noise_sensory_and_music),
                         icon = Icons.Outlined.PersonOutline,
                         onClick = onOpenAccessibilityProfile
                     )
                     HorizontalDivider()
                     SettingsNavRow(
-                        title = "Location & commute",
-                        subtitle = "How far you are willing to travel",
+                        title = stringResource(R.string.settings_location_commute),
+                        subtitle = stringResource(R.string.settings_how_far_you_are_willing),
                         icon = Icons.Outlined.DirectionsCar,
                         onClick = onOpenCommute
                     )
                     HorizontalDivider()
                     SettingsNavRow(
-                        title = "Interests",
-                        subtitle = "Tune your event recommendations",
+                        title = stringResource(R.string.settings_interests),
+                        subtitle = stringResource(R.string.settings_tune_your_event_recommendations),
                         icon = Icons.Outlined.Interests,
                         onClick = onOpenInterests
                     )
                     HorizontalDivider()
                     SettingsNavRow(
-                        title = "Event collections",
-                        subtitle = "Your saved lists of events",
+                        title = stringResource(R.string.settings_event_collections),
+                        subtitle = stringResource(R.string.settings_your_saved_lists_of_events),
                         icon = Icons.Outlined.Collections,
                         onClick = onOpenCollections
                     )
@@ -347,22 +347,22 @@ fun SettingsScreen(
             Card(Modifier.fillMaxWidth()) {
                 Column {
                     SettingsNavRow(
-                        title = "Moderation tools",
-                        subtitle = "Review and resolve reported content",
+                        title = stringResource(R.string.settings_moderation_tools),
+                        subtitle = stringResource(R.string.settings_review_and_resolve_reported_content),
                         icon = Icons.Outlined.Shield,
                         onClick = onOpenModeration
                     )
                     HorizontalDivider()
                     SettingsNavRow(
-                        title = "Report a scam or issue",
-                        subtitle = "Help keep EventFinder safe for everyone",
+                        title = stringResource(R.string.settings_report_a_scam_or_issue),
+                        subtitle = stringResource(R.string.settings_help_keep_eventfinder_safe_for),
                         icon = Icons.Outlined.Flag,
                         onClick = onOpenReportScam
                     )
                     HorizontalDivider()
                     SettingsNavRow(
-                        title = "Blocked users",
-                        subtitle = "Review and unblock people you have blocked",
+                        title = stringResource(R.string.settings_blocked_users),
+                        subtitle = stringResource(R.string.settings_review_and_unblock_people_you),
                         icon = Icons.Outlined.Block,
                         onClick = onOpenBlockedUsers
                     )
@@ -371,11 +371,11 @@ fun SettingsScreen(
 
             Card(Modifier.fillMaxWidth()) {
                 ListItem(
-                    headlineContent = { Text("About EventFinder") },
+                    headlineContent = { Text(stringResource(R.string.settings_about_eventfinder)) },
                     supportingContent = {
                         Text(
-                            if (adminMode) "Version ${com.eventfinder.app.BuildConfig.VERSION_NAME} · Admin tools enabled"
-                            else "Version ${com.eventfinder.app.BuildConfig.VERSION_NAME}"
+                            if (adminMode) stringResource(R.string.settings_version_admin, com.eventfinder.app.BuildConfig.VERSION_NAME)
+                            else stringResource(R.string.settings_version, com.eventfinder.app.BuildConfig.VERSION_NAME)
                         )
                     },
                     leadingContent = {
@@ -400,7 +400,7 @@ fun SettingsScreen(
             Card(Modifier.fillMaxWidth()) {
                 Column {
                     ListItem(
-                        headlineContent = { Text("Wheelchair accessible venues only") },
+                        headlineContent = { Text(stringResource(R.string.settings_wheelchair_accessible_venues_only)) },
                         trailingContent = {
                             Switch(
                                 checked = state.wheelchairNeeded,
@@ -410,7 +410,7 @@ fun SettingsScreen(
                     )
                     HorizontalDivider()
                     ListItem(
-                        headlineContent = { Text("Low-sensory events only") },
+                        headlineContent = { Text(stringResource(R.string.settings_low_sensory_events_only)) },
                         trailingContent = {
                             Switch(
                                 checked = state.lowSensoryNeeded,
@@ -420,8 +420,8 @@ fun SettingsScreen(
                     )
                     HorizontalDivider()
                     ListItem(
-                        headlineContent = { Text("Warn me about loud music") },
-                        supportingContent = { Text("Flags noise-heavy events before you go") },
+                        headlineContent = { Text(stringResource(R.string.settings_warn_me_about_loud_music)) },
+                        supportingContent = { Text(stringResource(R.string.settings_flags_noise_heavy_events_before)) },
                         trailingContent = {
                             Switch(
                                 checked = state.loudNoiseNeeded,
@@ -431,8 +431,8 @@ fun SettingsScreen(
                     )
                     HorizontalDivider()
                     ListItem(
-                        headlineContent = { Text("Prefer music-free events") },
-                        supportingContent = { Text("Sensory and religious accessibility") },
+                        headlineContent = { Text(stringResource(R.string.settings_prefer_music_free_events)) },
+                        supportingContent = { Text(stringResource(R.string.settings_sensory_and_religious_accessibility)) },
                         trailingContent = {
                             Switch(
                                 checked = state.noMusicNeeded,
@@ -442,7 +442,7 @@ fun SettingsScreen(
                     )
                     HorizontalDivider()
                     ListItem(
-                        headlineContent = { Text("Reduced motion") },
+                        headlineContent = { Text(stringResource(R.string.settings_reduced_motion)) },
                         trailingContent = {
                             Switch(
                                 checked = state.reducedMotion,
@@ -452,7 +452,7 @@ fun SettingsScreen(
                     )
                     HorizontalDivider()
                     ListItem(
-                        headlineContent = { Text("High contrast") },
+                        headlineContent = { Text(stringResource(R.string.settings_high_contrast)) },
                         trailingContent = {
                             Switch(
                                 checked = state.highContrast,
@@ -462,8 +462,8 @@ fun SettingsScreen(
                     )
                     HorizontalDivider()
                     ListItem(
-                        headlineContent = { Text("Event notifications") },
-                        supportingContent = { Text("Consent for reminders and new-event alerts") },
+                        headlineContent = { Text(stringResource(R.string.settings_event_notifications)) },
+                        supportingContent = { Text(stringResource(R.string.settings_consent_for_reminders_and_new)) },
                         trailingContent = {
                             Switch(
                                 checked = state.notificationConsent,
@@ -473,8 +473,8 @@ fun SettingsScreen(
                     )
                     HorizontalDivider()
                     ListItem(
-                        headlineContent = { Text("Export my data") },
-                        supportingContent = { Text("Download a copy of your data") },
+                        headlineContent = { Text(stringResource(R.string.settings_export_my_data)) },
+                        supportingContent = { Text(stringResource(R.string.settings_download_a_copy_of_your)) },
                         modifier = Modifier.clickable { viewModel.exportData() }
                     )
                 }
@@ -483,16 +483,16 @@ fun SettingsScreen(
             Card(Modifier.fillMaxWidth()) {
                 Column {
                     ListItem(
-                        headlineContent = { Text("Appearance") },
-                        supportingContent = { Text("Choose light, dark or follow your device") },
+                        headlineContent = { Text(stringResource(R.string.settings_appearance)) },
+                        supportingContent = { Text(stringResource(R.string.settings_choose_light_dark_or_follow)) },
                         trailingContent = {
                             var themeExpanded by remember { mutableStateOf(false) }
                             Box {
                                 TextButton(onClick = { themeExpanded = true }) {
-                                    Text(when (themeMode) { "light" -> "Light"; "dark" -> "Dark"; else -> "System" })
+                                    Text(when (themeMode) { "light" -> stringResource(R.string.settings_theme_light); "dark" -> stringResource(R.string.settings_theme_dark); else -> stringResource(R.string.settings_theme_system) })
                                 }
                                 DropdownMenu(expanded = themeExpanded, onDismissRequest = { themeExpanded = false }) {
-                                    listOf("system" to "System default", "light" to "Light", "dark" to "Dark").forEach { (value, label) ->
+                                    listOf("system" to stringResource(R.string.settings_theme_system_default), "light" to stringResource(R.string.settings_theme_light), "dark" to stringResource(R.string.settings_theme_dark)).forEach { (value, label) ->
                                         DropdownMenuItem(text = { Text(label) }, onClick = {
                                             themeExpanded = false
                                             screenScope.launch { container.preferences.setThemeMode(value) }
@@ -504,8 +504,8 @@ fun SettingsScreen(
                     )
                     HorizontalDivider()
                     ListItem(
-                        headlineContent = { Text("Material You colors") },
-                        supportingContent = { Text("Palette from your wallpaper (Android 12+); off keeps the brand green") },
+                        headlineContent = { Text(stringResource(R.string.settings_material_you_colors)) },
+                        supportingContent = { Text(stringResource(R.string.settings_palette_from_your_wallpaper_android)) },
                         trailingContent = {
                             Switch(
                                 checked = state.dynamicColor,
@@ -695,13 +695,13 @@ private fun SmartNotificationCard(container: AppContainer) {
     Card(Modifier.fillMaxWidth()) {
         Column {
             ListItem(
-                headlineContent = { Text("Smart notifications") },
-                supportingContent = { Text("Only the updates that matter to you") }
+                headlineContent = { Text(stringResource(R.string.settings_smart_notifications)) },
+                supportingContent = { Text(stringResource(R.string.settings_only_the_updates_that_matter)) }
             )
             HorizontalDivider()
             ListItem(
-                headlineContent = { Text("Group updates") },
-                supportingContent = { Text("Changes to plans you joined") },
+                headlineContent = { Text(stringResource(R.string.settings_group_updates)) },
+                supportingContent = { Text(stringResource(R.string.settings_changes_to_plans_you_joined)) },
                 trailingContent = {
                     Switch(
                         checked = group,
@@ -711,8 +711,8 @@ private fun SmartNotificationCard(container: AppContainer) {
             )
             HorizontalDivider()
             ListItem(
-                headlineContent = { Text("Nearby events") },
-                supportingContent = { Text("Events happening close to you") },
+                headlineContent = { Text(stringResource(R.string.settings_nearby_events)) },
+                supportingContent = { Text(stringResource(R.string.settings_events_happening_close_to_you)) },
                 trailingContent = {
                     Switch(
                         checked = nearby,
@@ -722,8 +722,8 @@ private fun SmartNotificationCard(container: AppContainer) {
             )
             HorizontalDivider()
             ListItem(
-                headlineContent = { Text("Personalised picks") },
-                supportingContent = { Text("Recommendations based on your interests") },
+                headlineContent = { Text(stringResource(R.string.settings_personalised_picks)) },
+                supportingContent = { Text(stringResource(R.string.settings_recommendations_based_on_your_interests)) },
                 trailingContent = {
                     Switch(
                         checked = picks,

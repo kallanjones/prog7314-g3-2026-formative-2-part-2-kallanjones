@@ -99,7 +99,7 @@ fun OrganizerProfileScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 },
@@ -313,7 +313,7 @@ fun OrganizerProfileScreen(
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = if (state.blocked) "Unblock organizer" else "Block organizer",
+                        text = if (state.blocked) stringResource(R.string.organizer_unblock_organizer) else stringResource(R.string.organizer_block_organizer),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

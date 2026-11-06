@@ -1,5 +1,7 @@
 package com.eventfinder.app.ui.components
 
+import com.eventfinder.app.R
+import androidx.compose.ui.res.stringResource
 import com.eventfinder.app.ui.theme.LocalAccentText
 import android.content.Intent
 import android.net.Uri
@@ -108,14 +110,14 @@ fun BringAFriendSheet(
 
             Spacer(Modifier.height(16.dp))
             Text(
-                text = "Invite a Friend",
+                text = stringResource(R.string.sheet_invite_a_friend),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                text = "Share this event with a friend and enjoy it together!",
+                text = stringResource(R.string.sheet_share_this_event_with_a),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -129,10 +131,10 @@ fun BringAFriendSheet(
                         type = "text/plain"
                         putExtra(
                             Intent.EXTRA_TEXT,
-                            "Join me at $eventTitle on EventFinder South Africa: $eventUrl"
+                            context.getString(R.string.sheet_invite_message, eventTitle, eventUrl)
                         )
                     }
-                    context.startActivity(Intent.createChooser(share, "Share Invite Link"))
+                    context.startActivity(Intent.createChooser(share, context.getString(R.string.sheet_share_invite_link)))
                     onInviteSent()
                     scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
                 },
@@ -147,7 +149,7 @@ fun BringAFriendSheet(
             ) {
                 Icon(Icons.Outlined.Link, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Share Invite Link", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.sheet_share_invite_link), fontWeight = FontWeight.Bold)
             }
 
             Row(
@@ -158,7 +160,7 @@ fun BringAFriendSheet(
             ) {
                 androidx.compose.material3.HorizontalDivider(modifier = Modifier.weight(1f))
                 Text(
-                    "OR",
+                    stringResource(R.string.sheet_or),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 12.dp)
@@ -166,22 +168,22 @@ fun BringAFriendSheet(
                 androidx.compose.material3.HorizontalDivider(modifier = Modifier.weight(1f))
             }
 
-            BrandOutlineButton("Invite from Contacts") {
+            BrandOutlineButton(stringResource(R.string.sheet_invite_from_contacts)) {
                 // Contacts pickers are not guaranteed on every device; the
                 // share sheet is the reliable fallback with the same content.
                 val share = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
                     putExtra(
                         Intent.EXTRA_TEXT,
-                        "Join me at $eventTitle on EventFinder South Africa: $eventUrl"
+                        context.getString(R.string.sheet_invite_message, eventTitle, eventUrl)
                     )
                 }
-                context.startActivity(Intent.createChooser(share, "Invite from Contacts"))
+                context.startActivity(Intent.createChooser(share, context.getString(R.string.sheet_invite_from_contacts)))
                 onInviteSent()
             }
 
             Spacer(Modifier.height(6.dp))
-            BrandTextAction("Cancel") {
+            BrandTextAction(stringResource(R.string.cancel)) {
                 scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
             }
         }
@@ -234,14 +236,14 @@ fun ExportRsvpSheet(
 
             Spacer(Modifier.height(16.dp))
             Text(
-                text = "Download RSVP List",
+                text = stringResource(R.string.sheet_download_rsvp_list),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                text = "Get a CSV file with all attendees for this event.",
+                text = stringResource(R.string.sheet_get_a_csv_file_with),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -249,13 +251,13 @@ fun ExportRsvpSheet(
 
             Spacer(Modifier.height(18.dp))
 
-            BulletRow("Includes: Name, Email, RSVP Status")
-            BulletRow("Updated in real-time")
+            BulletRow(stringResource(R.string.sheet_includes_name_email_rsvp_status))
+            BulletRow(stringResource(R.string.sheet_updated_in_real_time))
             BulletRow("${tickets.size} attendee${if (tickets.size == 1) "" else "s"} in $eventTitle")
 
             Spacer(Modifier.height(18.dp))
 
-            BrandPrimaryButton("Download CSV") {
+            BrandPrimaryButton(stringResource(R.string.sheet_download_csv)) {
                 val file = writeRsvpCsv(context.cacheDir, eventId, tickets)
                 if (file != null) {
                     val uri = androidx.core.content.FileProvider.getUriForFile(
@@ -268,13 +270,13 @@ fun ExportRsvpSheet(
                         putExtra(Intent.EXTRA_STREAM, uri)
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
-                    context.startActivity(Intent.createChooser(intent, "Export RSVPs"))
+                    context.startActivity(Intent.createChooser(intent, context.getString(R.string.detail_export_rsvps)))
                 }
                 scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
             }
 
             Spacer(Modifier.height(6.dp))
-            BrandTextAction("Cancel") {
+            BrandTextAction(stringResource(R.string.cancel)) {
                 scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
             }
         }
@@ -354,7 +356,7 @@ fun MeetingPointSheet(
                 .navigationBarsPadding()
         ) {
             Text(
-                text = "Select Meeting Point",
+                text = stringResource(R.string.sheet_select_meeting_point),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.onBackground,
@@ -363,7 +365,7 @@ fun MeetingPointSheet(
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                text = "Choose a convenient meeting point for your group.",
+                text = stringResource(R.string.sheet_choose_a_convenient_meeting_point),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -446,23 +448,23 @@ fun MeetingPointSheet(
             }
 
             Spacer(Modifier.height(8.dp))
-            SheetLinkRow(Icons.Outlined.LocationOn, "View on Map") {
+            SheetLinkRow(Icons.Outlined.LocationOn, stringResource(R.string.sheet_view_on_map)) {
                 val uri = Uri.parse("geo:${place.latitude},${place.longitude}?q=${place.latitude},${place.longitude}(${Uri.encode(label)})")
                 val intent = Intent(Intent.ACTION_VIEW, uri)
                 runCatching { context.startActivity(intent) }
             }
-            SheetLinkRow(Icons.Outlined.Share, "Suggest Another") {
+            SheetLinkRow(Icons.Outlined.Share, stringResource(R.string.sheet_suggest_another)) {
                 index += 1
                 label = listOf("Main Gate", "North Entrance", "Coffee Corner", "Parking A").random()
             }
 
             Spacer(Modifier.height(12.dp))
-            BrandPrimaryButton("Confirm Location") {
+            BrandPrimaryButton(stringResource(R.string.sheet_confirm_location)) {
                 onConfirm(label, place.latitude, place.longitude)
                 scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
             }
             Spacer(Modifier.height(4.dp))
-            BrandTextAction("Cancel") {
+            BrandTextAction(stringResource(R.string.cancel)) {
                 scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
             }
         }

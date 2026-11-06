@@ -1,5 +1,6 @@
 package com.eventfinder.app.ui.components
 
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -110,10 +111,10 @@ fun RsvpActionButton(
             Spacer(Modifier.width(8.dp))
             Text(
                 text = when (status) {
-                    RsvpStatus.ATTENDING -> "Going"
-                    RsvpStatus.MAYBE -> "Maybe"
-                    RsvpStatus.DECLINED -> "Not Going"
-                    null -> "RSVP"
+                    RsvpStatus.ATTENDING -> stringResource(R.string.rsvp_going)
+                    RsvpStatus.MAYBE -> stringResource(R.string.attend_maybe)
+                    RsvpStatus.DECLINED -> stringResource(R.string.rsvp_not_going)
+                    null -> stringResource(R.string.rsvp_rsvp)
                 },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium,
@@ -152,7 +153,7 @@ fun RsvpActionButton(
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = "Cancel RSVP",
+                    text = stringResource(R.string.rsvp_cancel_rsvp),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium,
                     color = EventFinderTokens.TextSecondary
@@ -261,9 +262,9 @@ fun RsvpOptionPill(
         RsvpStatus.DECLINED -> R.drawable.ic_ms_close
     }
     val label = when (status) {
-        RsvpStatus.ATTENDING -> "Going"
-        RsvpStatus.MAYBE -> "Maybe"
-        RsvpStatus.DECLINED -> "Not Going"
+        RsvpStatus.ATTENDING -> stringResource(R.string.rsvp_going)
+        RsvpStatus.MAYBE -> stringResource(R.string.attend_maybe)
+        RsvpStatus.DECLINED -> stringResource(R.string.rsvp_not_going)
     }
     Surface(
         onClick = onClick,
@@ -392,9 +393,9 @@ fun AboutEventButton(
             Spacer(Modifier.width(12.dp))
             Text(
                 text = when {
-                    loading -> "Loading…"
-                    error -> "Unable to load details"
-                    else -> "About This Event"
+                    loading -> stringResource(R.string.splash_loading)
+                    error -> stringResource(R.string.rsvp_unable_to_load_details)
+                    else -> stringResource(R.string.rsvp_about_this_event)
                 },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium,
@@ -485,7 +486,7 @@ fun RsvpStatusNotice(
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             painter = painterResource(R.drawable.ic_ms_refresh),
-                            contentDescription = "Retry",
+                            contentDescription = stringResource(R.string.rsvp_retry),
                             tint = EventFinderTokens.Green,
                             modifier = Modifier.size(20.dp)
                         )
@@ -538,10 +539,10 @@ fun ReportEventButton(
         else -> EventFinderTokens.TextPrimary
     }
     val label = when {
-        submitted -> "Report Submitted"
-        error -> "Try Again"
-        loading -> "Reporting…"
-        else -> "Report this Event"
+        submitted -> stringResource(R.string.report_sent)
+        error -> stringResource(R.string.try_again)
+        loading -> stringResource(R.string.rsvp_reporting)
+        else -> stringResource(R.string.rsvp_report_this_event)
     }
 
     Surface(

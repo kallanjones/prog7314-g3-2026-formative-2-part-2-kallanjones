@@ -253,9 +253,9 @@ class SettingsViewModel(
                 val file = java.io.File(context.cacheDir, "eventfinder_export.json")
                 file.writeText(root.toString())
                 _exportPath.emit(file.absolutePath)
-                _messages.emit(com.eventfinder.app.ui.components.UiMessage.Literal("Data exported"))
+                _messages.emit(com.eventfinder.app.ui.components.UiMessage.Resource(R.string.msg_data_exported))
             } catch (e: Exception) {
-                _messages.emit(com.eventfinder.app.ui.components.UiMessage.Literal("Export failed"))
+                _messages.emit(com.eventfinder.app.ui.components.UiMessage.Resource(R.string.msg_export_failed))
             }
         }
     }

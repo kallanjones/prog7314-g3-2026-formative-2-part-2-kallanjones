@@ -1,5 +1,8 @@
 package com.eventfinder.app.ui.screens.groups
 
+import androidx.compose.ui.res.pluralStringResource
+import com.eventfinder.app.R
+import androidx.compose.ui.res.stringResource
 import com.eventfinder.app.ui.theme.LocalAccentText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -53,6 +56,7 @@ fun GroupPlanningScreen(
     val scope = rememberCoroutineScope()
     val repository = remember { container.groupPlanningRepository }
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     var plans by remember { mutableStateOf<List<GroupPlan>>(emptyList()) }
     var event by remember { mutableStateOf<Event?>(null) }
@@ -69,16 +73,16 @@ fun GroupPlanningScreen(
     }
 
     val plan = plans.firstOrNull()
-    val title = event?.title ?: "Group Plan"
+    val title = event?.title ?: stringResource(R.string.group_group_plan)
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Group Plan", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.group_group_plan), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -112,13 +116,16 @@ fun GroupPlanningScreen(
                     }
                     Spacer(Modifier.height(14.dp))
                     Text(
-                        "Group RSVP",
+                        stringResource(R.string.group_group_rsvp),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = "${plan?.members?.size ?: 1} going • ${if (accessibilityOn) "accessible seats" else "2 maybe"}",
+                        text = (plan?.members?.size ?: 1).let { going ->
+                            val goingText = pluralStringResource(R.plurals.group_going_count, going, going)
+                            if (accessibilityOn) "$goingText • ${stringResource(R.string.group_accessible_seats)}" else goingText
+                        },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -139,7 +146,7 @@ fun GroupPlanningScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "Invite Friends",
+                            stringResource(R.string.detail_invite_friends),
                             color = LocalAccentText.current,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -154,32 +161,32 @@ fun GroupPlanningScreen(
                 Column {
                     GroupRow(
                         icon = Icons.Outlined.LocationOn,
-                        title = "Meeting Point",
-                        subtitle = plan?.meetingPointLabel ?: "Choose a convenient spot",
-                        trailing = "Change",
+                        title = stringResource(R.string.group_meeting_point),
+                        subtitle = plan?.meetingPointLabel ?: stringResource(R.string.group_choose_a_convenient_spot),
+                        trailing = stringResource(R.string.group_change),
                         onClick = { showMeetingSheet = true }
                     )
                     HorizontalDivider()
                     GroupRow(
                         icon = Icons.Outlined.NotificationsActive,
-                        title = "Plan Notifications",
-                        subtitle = "Get notified about changes",
+                        title = stringResource(R.string.group_plan_notifications),
+                        subtitle = stringResource(R.string.group_get_notified_about_changes),
                         switchChecked = notificationsOn,
                         onSwitch = { notificationsOn = it }
                     )
                     HorizontalDivider()
                     GroupRow(
                         icon = Icons.Outlined.EventRepeat,
-                        title = "Recurring Event",
-                        subtitle = "Repeat this plan each week",
+                        title = stringResource(R.string.group_recurring_event),
+                        subtitle = stringResource(R.string.group_repeat_this_plan_each_week),
                         switchChecked = recurringOn,
                         onSwitch = { recurringOn = it }
                     )
                     HorizontalDivider()
                     GroupRow(
                         icon = Icons.Outlined.Accessibility,
-                        title = "Accessibility Options",
-                        subtitle = "Wheelchair access, quiet zones",
+                        title = stringResource(R.string.group_accessibility_options),
+                        subtitle = stringResource(R.string.group_wheelchair_access_quiet_zones),
                         switchChecked = accessibilityOn,
                         onSwitch = { accessibilityOn = it }
                     )
@@ -205,7 +212,7 @@ fun GroupPlanningScreen(
                     )
                     Spacer(Modifier.width(10.dp))
                     Text(
-                        if (plans.isEmpty()) "No plan saved yet — save to start one"
+                        if (plans.isEmpty()) stringResource(R.string.group_no_plan_saved_yet_save)
                         else "${plans.size} plan${if (plans.size == 1) "" else "s"} for this event",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -238,7 +245,7 @@ fun GroupPlanningScreen(
                         }
                         saving = false
                         snackbarHostState.showSnackbar(
-                            if (outcome.isSuccess) "Plan saved" else "Could not save plan"
+                            if (outcome.isSuccess) context.getString(R.string.group_plan_saved) else context.getString(R.string.group_could_not_save_plan)
                         )
                     }
                 },
@@ -248,7 +255,7 @@ fun GroupPlanningScreen(
                     .height(54.dp),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Save Plan", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.group_save_plan), fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -279,7 +286,7 @@ fun GroupPlanningScreen(
                     } else {
                         repository.updateMeetingPoint(existing.id, label, lat, lng)
                     }
-                    snackbarHostState.showSnackbar("Meeting point set to $label")
+                    snackbarHostState.showSnackbar(context.getString(R.string.group_meeting_point_set, label))
                 }
             }
         )
@@ -314,7 +321,7 @@ private fun EventHeadline(event: Event?, fallbackTitle: String) {
             Spacer(Modifier.height(2.dp))
             val subtitle = event?.let {
                 "${DateTimeUtils.formatShortDate(it.startDate)} • ${DateTimeUtils.formatTime(it.startDate)}"
-            } ?: "Invite friends and plan together"
+            } ?: stringResource(R.string.group_invite_friends_and_plan_together)
             Text(
                 subtitle,
                 style = MaterialTheme.typography.bodySmall,

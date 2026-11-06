@@ -1,5 +1,7 @@
 package com.eventfinder.app.ui.screens.preferences
 
+import com.eventfinder.app.R
+import androidx.compose.ui.res.stringResource
 import android.widget.Toast
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -132,66 +134,66 @@ fun AccessibilityScreen(
     val state by vm.state.collectAsState()
     val context = LocalContext.current
 
-    PreferenceScaffold(title = "Accessibility", onBack = onBack) {
+    PreferenceScaffold(title = stringResource(R.string.a11y_accessibility), onBack = onBack) {
         PreferenceHeading(
-            title = "Accessibility",
-            subtitle = "Make events more accessible for you"
+            title = stringResource(R.string.a11y_accessibility),
+            subtitle = stringResource(R.string.a11y_make_events_more_accessible_for)
         )
 
         PreferenceSwitchRow(
             icon = Icons.Outlined.Accessible,
-            title = "Wheelchair Accessible",
+            title = stringResource(R.string.a11y_wheelchair_accessible),
             checked = state.wheelchairNeeded,
             onCheckedChange = vm::setWheelchairNeeded
         )
         PreferenceSwitchRow(
             icon = Icons.Outlined.Hearing,
-            title = "Loud Noise Warnings",
+            title = stringResource(R.string.a11y_loud_noise_warnings),
             checked = state.loudNoiseWarning,
             onCheckedChange = vm::setLoudNoise
         )
         PreferenceSwitchRow(
             icon = Icons.Outlined.MusicOff,
-            title = "No Music",
+            title = stringResource(R.string.a11y_no_music),
             checked = state.noMusic,
             onCheckedChange = vm::setNoMusic
         )
         PreferenceSwitchRow(
             icon = Icons.Outlined.SensorOccupied,
-            title = "Sensory Friendly",
+            title = stringResource(R.string.a11y_sensory_friendly),
             checked = state.sensoryFriendly,
             onCheckedChange = vm::setSensoryFriendly
         )
         PreferenceSwitchRow(
             icon = Icons.Outlined.Bolt,
-            title = "Strobe Lights",
+            title = stringResource(R.string.a11y_strobe_lights),
             checked = "strobe" in state.sensoryTriggers,
             onCheckedChange = { vm.toggleTrigger("strobe") }
         )
         PreferenceSwitchRow(
             icon = Icons.Outlined.SettingsAccessibility,
-            title = "Accessibility-First Event Sorting",
+            title = stringResource(R.string.a11y_accessibility_first_event_sorting),
             checked = state.accessibilityFirstSorting,
             onCheckedChange = vm::setSorting
         )
 
         Spacer(Modifier.height(12.dp))
-        PreferenceInfoBox("Help us create a more inclusive EventFinder for all.")
+        PreferenceInfoBox(stringResource(R.string.a11y_help_us_create_a_more))
 
         Spacer(Modifier.height(14.dp))
         RowOfLinks(
             links = listOf(
-                "Wheelchair details" to onOpenWheelchair,
-                "Noise & sensory" to onOpenLoudNoise,
-                "No music" to onOpenNoMusic,
-                "Sensory warnings" to onOpenSensory,
-                "Profile" to onOpenProfile
+                stringResource(R.string.a11y_wheelchair_details) to onOpenWheelchair,
+                stringResource(R.string.a11y_noise_sensory) to onOpenLoudNoise,
+                stringResource(R.string.a11y_no_music_2) to onOpenNoMusic,
+                stringResource(R.string.a11y_sensory_warnings_2) to onOpenSensory,
+                stringResource(R.string.profile_title) to onOpenProfile
             )
         )
 
         Spacer(Modifier.height(18.dp))
-        BrandPrimaryButton("Save Preferences") {
-            confirmSaved("Accessibility preferences saved", context)
+        BrandPrimaryButton(stringResource(R.string.a11y_save_preferences)) {
+            confirmSaved(context.getString(R.string.a11y_accessibility_preferences_saved), context)
             onBack()
         }
         BottomActionSpacer()
@@ -227,29 +229,29 @@ fun WheelchairAccessibilityScreen(
     val state by vm.state.collectAsState()
     val context = LocalContext.current
 
-    PreferenceScaffold(title = "Wheelchair Accessibility", onBack = onBack) {
+    PreferenceScaffold(title = stringResource(R.string.a11y_wheelchair_accessibility), onBack = onBack) {
         PreferenceHeroIcon(Icons.Outlined.Accessible)
         PreferenceHeading(
-            title = "Wheelchair Accessibility",
-            subtitle = "Find events with wheelchair accessibility features."
+            title = stringResource(R.string.a11y_wheelchair_accessibility),
+            subtitle = stringResource(R.string.a11y_find_events_with_wheelchair_accessibility)
         )
 
         PreferenceToggleBlock(
-            title = "Only show accessible events",
+            title = stringResource(R.string.a11y_only_show_accessible_events),
             checked = state.wheelchairNeeded,
             onCheckedChange = vm::setWheelchairNeeded
         )
 
         Spacer(Modifier.height(18.dp))
-        PreferenceSectionLabel("Accessibility Features")
-        AccessibilityFeatureRow("Ramp Access", Icons.Outlined.Stairs, state, vm)
-        AccessibilityFeatureRow("Accessible Toilets", Icons.Outlined.Wc, state, vm)
-        AccessibilityFeatureRow("Reserved Seating", Icons.Outlined.EventSeat, state, vm)
-        AccessibilityFeatureRow("Other Features", Icons.Outlined.Accessibility, state, vm)
+        PreferenceSectionLabel(stringResource(R.string.a11y_accessibility_features))
+        AccessibilityFeatureRow(stringResource(R.string.a11y_ramp_access), Icons.Outlined.Stairs, state, vm)
+        AccessibilityFeatureRow(stringResource(R.string.a11y_accessible_toilets), Icons.Outlined.Wc, state, vm)
+        AccessibilityFeatureRow(stringResource(R.string.a11y_reserved_seating), Icons.Outlined.EventSeat, state, vm)
+        AccessibilityFeatureRow(stringResource(R.string.a11y_other_features), Icons.Outlined.Accessibility, state, vm)
 
         Spacer(Modifier.height(18.dp))
-        BrandPrimaryButton("Save Settings") {
-            confirmSaved("Wheelchair settings saved", context)
+        BrandPrimaryButton(stringResource(R.string.a11y_save_settings)) {
+            confirmSaved(context.getString(R.string.a11y_wheelchair_settings_saved), context)
             onBack()
         }
         BottomActionSpacer()
@@ -280,21 +282,21 @@ fun LoudNoiseScreen(container: AppContainer, onBack: () -> Unit) {
     val state by vm.state.collectAsState()
     val context = LocalContext.current
 
-    PreferenceScaffold(title = "Loud Noise Sensitivity", onBack = onBack) {
+    PreferenceScaffold(title = stringResource(R.string.a11y_loud_noise_sensitivity), onBack = onBack) {
         PreferenceHeroIcon(Icons.Outlined.Hearing)
         PreferenceHeading(
-            title = "Loud Noise Sensitivity",
-            subtitle = "Choose your preference for loud music and high noise events."
+            title = stringResource(R.string.a11y_loud_noise_sensitivity),
+            subtitle = stringResource(R.string.a11y_choose_your_preference_for_loud)
         )
 
-        PreferenceChoiceRow("No Preference", state.noiseLevel == "off") { vm.setNoiseLevel("off") }
-        PreferenceChoiceRow("Low Noise", state.noiseLevel == "low") { vm.setNoiseLevel("low") }
-        PreferenceChoiceRow("Moderate Noise", state.noiseLevel == "moderate") { vm.setNoiseLevel("moderate") }
-        PreferenceChoiceRow("High Noise (Warn Me)", state.noiseLevel == "high") { vm.setNoiseLevel("high") }
+        PreferenceChoiceRow(stringResource(R.string.a11y_no_preference), state.noiseLevel == "off") { vm.setNoiseLevel("off") }
+        PreferenceChoiceRow(stringResource(R.string.a11y_low_noise), state.noiseLevel == "low") { vm.setNoiseLevel("low") }
+        PreferenceChoiceRow(stringResource(R.string.a11y_moderate_noise), state.noiseLevel == "moderate") { vm.setNoiseLevel("moderate") }
+        PreferenceChoiceRow(stringResource(R.string.a11y_high_noise_warn), state.noiseLevel == "high") { vm.setNoiseLevel("high") }
 
         Spacer(Modifier.height(12.dp))
-        BrandPrimaryButton("Save Preference") {
-            confirmSaved("Noise preference saved", context)
+        BrandPrimaryButton(stringResource(R.string.a11y_save_preference)) {
+            confirmSaved(context.getString(R.string.a11y_noise_preference_saved), context)
             onBack()
         }
         BottomActionSpacer()
@@ -309,22 +311,22 @@ fun NoMusicScreen(container: AppContainer, onBack: () -> Unit) {
     val state by vm.state.collectAsState()
     val context = LocalContext.current
 
-    PreferenceScaffold(title = "No Music Preference", onBack = onBack) {
+    PreferenceScaffold(title = stringResource(R.string.a11y_no_music_preference), onBack = onBack) {
         PreferenceHeroIcon(Icons.Outlined.MusicOff)
         PreferenceHeading(
-            title = "No Music Preference",
-            subtitle = "Find events without live music or amplified sound."
+            title = stringResource(R.string.a11y_no_music_preference),
+            subtitle = stringResource(R.string.a11y_find_events_without_live_music)
         )
 
         PreferenceToggleBlock(
-            title = "Only show no-music events",
+            title = stringResource(R.string.a11y_only_show_no_music_events),
             checked = state.noMusic,
             onCheckedChange = vm::setNoMusic
         )
 
         Spacer(Modifier.height(20.dp))
-        BrandPrimaryButton("Save Settings") {
-            confirmSaved("Music preference saved", context)
+        BrandPrimaryButton(stringResource(R.string.a11y_save_settings)) {
+            confirmSaved(context.getString(R.string.a11y_music_preference_saved), context)
             onBack()
         }
         BottomActionSpacer()
@@ -339,41 +341,41 @@ fun SensoryPreferencesScreen(container: AppContainer, onBack: () -> Unit) {
     val state by vm.state.collectAsState()
     val context = LocalContext.current
 
-    PreferenceScaffold(title = "Sensory Preferences", onBack = onBack) {
+    PreferenceScaffold(title = stringResource(R.string.a11y_sensory_preferences), onBack = onBack) {
         PreferenceHeroIcon(Icons.Outlined.SensorOccupied)
         PreferenceHeading(
-            title = "Sensory Warnings",
-            subtitle = "Get warnings for events with flashing lights, strobe effects, or intense sensory elements."
+            title = stringResource(R.string.a11y_sensory_warnings),
+            subtitle = stringResource(R.string.a11y_get_warnings_for_events_with)
         )
 
         PreferenceSwitchRow(
             icon = Icons.Outlined.LightMode,
-            title = "Flashing Lights",
+            title = stringResource(R.string.a11y_flashing_lights),
             checked = "flashing" in state.sensoryTriggers,
             onCheckedChange = { vm.toggleTrigger("flashing") }
         )
         PreferenceSwitchRow(
             icon = Icons.Outlined.Bolt,
-            title = "Strobe Effects",
+            title = stringResource(R.string.a11y_strobe_effects),
             checked = "strobe" in state.sensoryTriggers,
             onCheckedChange = { vm.toggleTrigger("strobe") }
         )
         PreferenceSwitchRow(
             icon = Icons.Outlined.Groups,
-            title = "Loud Crowds",
+            title = stringResource(R.string.a11y_loud_crowds),
             checked = "crowds" in state.sensoryTriggers,
             onCheckedChange = { vm.toggleTrigger("crowds") }
         )
         PreferenceSwitchRow(
             icon = Icons.Outlined.SocialDistance,
-            title = "Other Sensory Triggers",
+            title = stringResource(R.string.a11y_other_sensory_triggers),
             checked = "other" in state.sensoryTriggers,
             onCheckedChange = { vm.toggleTrigger("other") }
         )
 
         Spacer(Modifier.height(20.dp))
-        BrandPrimaryButton("Save Preferences") {
-            confirmSaved("Sensory preferences saved", context)
+        BrandPrimaryButton(stringResource(R.string.a11y_save_preferences)) {
+            confirmSaved(context.getString(R.string.a11y_sensory_preferences_saved), context)
             onBack()
         }
         BottomActionSpacer()
@@ -391,50 +393,50 @@ fun AccessibilityProfileScreen(
         androidx.lifecycle.viewmodel.compose.viewModel(factory = AccessibilityViewModel.factory(container))
     val state by vm.state.collectAsState()
 
-    PreferenceScaffold(title = "Accessibility Profile", onBack = onBack) {
+    PreferenceScaffold(title = stringResource(R.string.a11y_accessibility_profile), onBack = onBack) {
         PreferenceHeroIcon(Icons.Outlined.Accessibility)
         PreferenceHeading(
-            title = "Accessibility Profile",
-            subtitle = "Customize your accessibility preferences for a better experience."
+            title = stringResource(R.string.a11y_accessibility_profile),
+            subtitle = stringResource(R.string.a11y_customize_your_accessibility_preferences_for)
         )
 
         PreferenceSummaryRow(
             icon = Icons.Outlined.Accessible,
-            title = "Wheelchair Access",
-            value = if (state.wheelchairNeeded) "On" else "Off"
+            title = stringResource(R.string.a11y_wheelchair_access),
+            value = if (state.wheelchairNeeded) stringResource(R.string.a11y_on) else stringResource(R.string.a11y_off)
         )
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         PreferenceSummaryRow(
             icon = Icons.Outlined.Hearing,
-            title = "Loud Noise",
+            title = stringResource(R.string.a11y_loud_noise),
             value = when (state.noiseLevel) {
-                "high" -> "Warn me"
-                "moderate" -> "Moderate"
-                "low" -> "Low"
-                else -> if (state.loudNoiseWarning) "On" else "Off"
+                "high" -> stringResource(R.string.a11y_warn_me)
+                "moderate" -> stringResource(R.string.a11y_moderate)
+                "low" -> stringResource(R.string.a11y_low)
+                else -> if (state.loudNoiseWarning) stringResource(R.string.a11y_on) else stringResource(R.string.a11y_off)
             }
         )
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         PreferenceSummaryRow(
             icon = Icons.Outlined.MusicOff,
-            title = "No Music",
-            value = if (state.noMusic) "On" else "Off"
+            title = stringResource(R.string.a11y_no_music),
+            value = if (state.noMusic) stringResource(R.string.a11y_on) else stringResource(R.string.a11y_off)
         )
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         PreferenceSummaryRow(
             icon = Icons.Outlined.SensorOccupied,
-            title = "Sensory Warnings",
-            value = if (state.sensoryTriggers.isEmpty()) "Off" else "${state.sensoryTriggers.size} active"
+            title = stringResource(R.string.a11y_sensory_warnings),
+            value = if (state.sensoryTriggers.isEmpty()) stringResource(R.string.a11y_off) else "${state.sensoryTriggers.size} active"
         )
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         PreferenceSummaryRow(
             icon = Icons.Outlined.Route,
-            title = "Commute Preference",
-            value = if (state.accessibilityFirstSorting) "Accessible first" else "Default"
+            title = stringResource(R.string.a11y_commute_preference),
+            value = if (state.accessibilityFirstSorting) stringResource(R.string.a11y_accessible_first) else stringResource(R.string.avatar_style_default)
         )
 
         Spacer(Modifier.height(20.dp))
-        BrandPrimaryButton("Update Profile", onClick = onEdit)
+        BrandPrimaryButton(stringResource(R.string.a11y_update_profile), onClick = onEdit)
         BottomActionSpacer()
     }
 }

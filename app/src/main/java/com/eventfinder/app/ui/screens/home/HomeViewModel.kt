@@ -210,9 +210,7 @@ class HomeViewModel(
             val expired = runCatching { eventRepository.expireStaleEvents() }.getOrDefault(0)
             if (expired > 0) {
                 _messages.emit(
-                    UiMessage.Literal(
-                        "$expired expired event${if (expired == 1) "" else "s"} removed from the local cache"
-                    )
+                    UiMessage.Resource(R.string.msg_expired_events_removed, listOf(expired))
                 )
             }
 
@@ -737,7 +735,7 @@ class HomeViewModel(
                 }
                 AppLogger.i("HomeViewModel", "Location selector -> $cityName (${place.latitude}, ${place.longitude})")
             } else {
-                _messages.emit(UiMessage.Literal("Could not locate $cityName — check your connection"))
+                _messages.emit(UiMessage.Resource(R.string.msg_could_not_locate, listOf(cityName)))
             }
         }
     }

@@ -1,5 +1,7 @@
 package com.eventfinder.app.ui.screens.tickets
 
+import com.eventfinder.app.R
+import androidx.compose.ui.res.stringResource
 import com.eventfinder.app.ui.theme.LocalAccentText
 import android.content.Intent
 import androidx.compose.foundation.background
@@ -86,11 +88,11 @@ fun MyTicketsScreen(
             .collect { value = it }
     }
 
-    PreferenceScaffold(title = "My Tickets", onBack = onBack) {
+    PreferenceScaffold(title = stringResource(R.string.tickets_my_tickets), onBack = onBack) {
         PreferenceHeroIcon(Icons.Outlined.ConfirmationNumber)
         PreferenceHeading(
-            title = "My Tickets",
-            subtitle = "Show the QR code at the gate. Tickets work offline."
+            title = stringResource(R.string.tickets_my_tickets),
+            subtitle = stringResource(R.string.tickets_show_the_qr_code_at)
         )
 
         if (tickets.isEmpty()) {
@@ -103,13 +105,13 @@ fun MyTicketsScreen(
             )
             Spacer(Modifier.height(10.dp))
             Text(
-                "No tickets yet",
+                stringResource(R.string.tickets_no_tickets_yet),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "RSVP to an event and your ticket will appear here.",
+                stringResource(R.string.tickets_rsvp_to_an_event_and),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -123,7 +125,7 @@ fun MyTicketsScreen(
                 event = event,
                 onShare = {
                     val text = buildString {
-                        append("My EventFinder ticket")
+                        append(context.getString(R.string.tickets_my_eventfinder_ticket))
                         event?.let { append(" for ${it.title}") }
                         append(": ${ticket.ticketCode}")
                     }
@@ -131,13 +133,13 @@ fun MyTicketsScreen(
                         type = "text/plain"
                         putExtra(Intent.EXTRA_TEXT, text)
                     }
-                    context.startActivity(Intent.createChooser(intent, "Share ticket"))
+                    context.startActivity(Intent.createChooser(intent, context.getString(R.string.tickets_share_ticket_2)))
                 },
                 onView = { event?.let { onEventClick(it.id) } }
             )
         }
         Spacer(Modifier.height(20.dp))
-        BrandTextAction("Back") { onBack() }
+        BrandTextAction(stringResource(R.string.back)) { onBack() }
         Spacer(Modifier.height(20.dp))
     }
 }
@@ -168,7 +170,7 @@ private fun TicketCard(
             Spacer(Modifier.size(12.dp))
             Column(Modifier.fillMaxWidth(0.82f)) {
                 Text(
-                    event?.title ?: "Event ticket",
+                    event?.title ?: stringResource(R.string.tickets_event_ticket),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     maxLines = 2
@@ -191,13 +193,13 @@ private fun TicketCard(
         ) {
             QrImage(
                 value = ticket.ticketCode,
-                contentDescription = "Ticket QR code ${ticket.ticketCode}",
+                contentDescription = stringResource(R.string.ticket_qr_desc, ticket.ticketCode),
                 modifier = Modifier.size(210.dp)
             )
         }
         Spacer(Modifier.height(10.dp))
         Text(
-            "Tap to enlarge at the gate",
+            stringResource(R.string.tickets_tap_to_enlarge_at_the),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -214,7 +216,7 @@ private fun TicketCard(
                 Spacer(Modifier.size(6.dp))
             }
             Text(
-                if (ticket.checkedInAt != null) "Checked in · ${ticket.ticketCode}" else "Ticket ${ticket.ticketCode}",
+                if (ticket.checkedInAt != null) stringResource(R.string.tickets_checked_in_code, ticket.ticketCode) else stringResource(R.string.scanner_ticket_named, ticket.ticketCode),
                 style = MaterialTheme.typography.labelMedium,
                 color = BrandGreen,
                 fontWeight = FontWeight.SemiBold
@@ -232,7 +234,7 @@ private fun TicketCard(
             ) {
                 Icon(Icons.Outlined.IosShare, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.size(8.dp))
-                Text("Share Ticket", fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.tickets_share_ticket), fontWeight = FontWeight.SemiBold)
             }
             OutlinedButton(
                 onClick = onView,
@@ -243,7 +245,7 @@ private fun TicketCard(
             ) {
                 Icon(Icons.Outlined.Wallet, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.size(8.dp))
-                Text("View Event")
+                Text(stringResource(R.string.detail_view_event))
             }
         }
     }

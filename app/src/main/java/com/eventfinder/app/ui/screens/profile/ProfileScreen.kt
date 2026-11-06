@@ -1,4 +1,4 @@
-﻿package com.eventfinder.app.ui.screens.profile
+package com.eventfinder.app.ui.screens.profile
 
 import com.eventfinder.app.ui.theme.LocalAccentText
 import androidx.compose.foundation.Image
@@ -150,7 +150,7 @@ fun ProfileScreen(
                             when (type) {
                                 "male" -> Image(
                                     painter = painterResource(R.drawable.avatar_male),
-                                    contentDescription = "Profile avatar",
+                                    contentDescription = stringResource(R.string.avatar_content_description),
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier
                                         .size(92.dp)
@@ -159,7 +159,7 @@ fun ProfileScreen(
 
                                 "female" -> Image(
                                     painter = painterResource(R.drawable.avatar_female),
-                                    contentDescription = "Profile avatar",
+                                    contentDescription = stringResource(R.string.avatar_content_description),
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier
                                         .size(92.dp)
@@ -170,7 +170,7 @@ fun ProfileScreen(
                                     if (!url.isNullOrBlank()) {
                                         AsyncImage(
                                             model = url,
-                                            contentDescription = "Profile photo",
+                                            contentDescription = stringResource(R.string.avatar_desc_photo),
                                             contentScale = ContentScale.Crop,
                                             modifier = Modifier
                                                 .size(92.dp)
@@ -188,7 +188,7 @@ fun ProfileScreen(
                         Spacer(Modifier.height(14.dp))
 
                         Text(
-                            text = state.fullName.ifBlank { "EventFinder Guest" },
+                            text = state.fullName.ifBlank { stringResource(R.string.profile_eventfinder_guest) },
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.ExtraBold
                         )
@@ -196,7 +196,7 @@ fun ProfileScreen(
                         Spacer(Modifier.height(4.dp))
 
                         Text(
-                            text = state.email.ifBlank { "Sign in to personalise your experience" },
+                            text = state.email.ifBlank { stringResource(R.string.profile_sign_in_to_personalise_your) },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -236,17 +236,17 @@ fun ProfileScreen(
                     )
                 ) {
                     Column {
-                        ProfileMenuRow("My Tickets", Icons.Outlined.ConfirmationNumber, onMyTickets)
+                        ProfileMenuRow(stringResource(R.string.tickets_my_tickets), Icons.Outlined.ConfirmationNumber, onMyTickets)
                         HorizontalDivider()
-                        ProfileMenuRow("My Collections", Icons.Outlined.Collections, onCollections)
+                        ProfileMenuRow(stringResource(R.string.profile_my_collections), Icons.Outlined.Collections, onCollections)
                         HorizontalDivider()
-                        ProfileMenuRow("Interests", Icons.Outlined.Interests, onInterests)
+                        ProfileMenuRow(stringResource(R.string.settings_interests), Icons.Outlined.Interests, onInterests)
                         HorizontalDivider()
-                        ProfileMenuRow("Location & commute", Icons.Outlined.DirectionsCar, onCommute)
+                        ProfileMenuRow(stringResource(R.string.settings_location_commute), Icons.Outlined.DirectionsCar, onCommute)
                         HorizontalDivider()
-                        ProfileMenuRow("Accessibility", Icons.Outlined.Accessibility, onAccessibility)
+                        ProfileMenuRow(stringResource(R.string.a11y_accessibility), Icons.Outlined.Accessibility, onAccessibility)
                         HorizontalDivider()
-                        ProfileMenuRow("Account & settings", Icons.Outlined.Settings, onSettings)
+                        ProfileMenuRow(stringResource(R.string.profile_account_settings), Icons.Outlined.Settings, onSettings)
                     }
                 }
             }
