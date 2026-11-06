@@ -1,5 +1,6 @@
 package com.eventfinder.app.ui.screens.groups
 
+import com.eventfinder.app.ui.theme.LocalAccentText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -133,13 +134,13 @@ fun GroupPlanningScreen(
                         Icon(
                             Icons.Outlined.GroupAdd,
                             contentDescription = null,
-                            tint = BrandGreen,
+                            tint = LocalAccentText.current,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
                             "Invite Friends",
-                            color = BrandGreen,
+                            color = LocalAccentText.current,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -199,7 +200,7 @@ fun GroupPlanningScreen(
                     Icon(
                         Icons.Outlined.Group,
                         contentDescription = null,
-                        tint = BrandGreen,
+                        tint = LocalAccentText.current,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(Modifier.width(10.dp))
@@ -392,7 +393,7 @@ private fun GroupRow(
             Text(
                 trailing,
                 style = MaterialTheme.typography.labelLarge,
-                color = BrandGreen,
+                color = LocalAccentText.current,
                 fontWeight = FontWeight.SemiBold
             )
         }

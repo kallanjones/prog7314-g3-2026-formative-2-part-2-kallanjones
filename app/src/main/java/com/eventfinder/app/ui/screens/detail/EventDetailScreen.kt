@@ -1,5 +1,6 @@
 ﻿package com.eventfinder.app.ui.screens.detail
 
+import com.eventfinder.app.ui.theme.LocalAccentText
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
@@ -175,6 +176,7 @@ fun EventDetailScreen(
     onOpenScanner: (String) -> Unit = {},
     onOrganizerClick: (String) -> Unit = {},
     onReportEvent: (String) -> Unit = {},
+    onRateEvent: (String) -> Unit = {},
     onOpenEvent: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -428,7 +430,7 @@ fun EventDetailScreen(
                                 Spacer(Modifier.height(8.dp))
                                 StatusChip(
                                     label = "Repeats ${event.recurrenceRule}",
-                                    color = MaterialTheme.colorScheme.primary
+                                    color = LocalAccentText.current
                                 )
                             }
                             if (event.wheelchairAccessible || event.loudMusic ||
@@ -520,7 +522,7 @@ fun EventDetailScreen(
                                     Text(
                                         "· ${com.eventfinder.app.utils.DistanceCalculator.displayDistanceKm(view.distanceKm)} km " +
                                             stringResource(R.string.distance_away),
-                                        color = MaterialTheme.colorScheme.primary,
+                                        color = LocalAccentText.current,
                                         style = MaterialTheme.typography.bodyMedium
                                     )
                                 }
@@ -566,7 +568,7 @@ fun EventDetailScreen(
                                 Text(
                                     stringResource(R.string.view_profile),
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.primary
+                                    color = LocalAccentText.current
                                 )
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -584,7 +586,24 @@ fun EventDetailScreen(
                             WeatherCard(state)
                             Spacer(Modifier.height(12.dp))
 
-                            Text(stringResource(R.string.reviews), style = MaterialTheme.typography.titleMedium)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    stringResource(R.string.reviews),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                TextButton(onClick = { onRateEvent(event.id) }) {
+                                    Text(
+                                        stringResource(R.string.rating_rate_event),
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = LocalAccentText.current
+                                    )
+                                }
+                            }
                             Spacer(Modifier.height(4.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 val average = state.averageRating
@@ -735,13 +754,13 @@ fun EventDetailScreen(
                                                                 Icons.Outlined.Verified,
                                                                 contentDescription = stringResource(R.string.review_verified),
                                                                 modifier = Modifier.size(14.dp),
-                                                                tint = MaterialTheme.colorScheme.primary
+                                                                tint = LocalAccentText.current
                                                             )
                                                             Spacer(Modifier.size(3.dp))
                                                             Text(
                                                                 stringResource(R.string.review_verified),
                                                                 style = MaterialTheme.typography.labelSmall,
-                                                                color = MaterialTheme.colorScheme.primary
+                                                                color = LocalAccentText.current
                                                             )
                                                         }
                                                     }
@@ -890,7 +909,7 @@ fun EventDetailScreen(
                                         Icon(
                                             imageVector = Icons.Outlined.Info,
                                             contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
+                                            tint = LocalAccentText.current,
                                             modifier = Modifier.size(22.dp)
                                         )
                                         Spacer(Modifier.size(12.dp))
@@ -1709,7 +1728,7 @@ private fun AccessibilityChip(icon: ImageVector, label: String) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = LocalAccentText.current,
             modifier = Modifier.size(14.dp)
         )
         Spacer(Modifier.width(5.dp))

@@ -60,3 +60,9 @@ api/**/data/*.db-wal
 
 # Azure CLI deployment settings written by `az webapp up`
 .azure/
+
+# Local verification screenshots (root only; docs/screenshots holds the README images)
+/screenshots/
+
+# Local signing-material backup (contains secrets, never commit)
+backups/

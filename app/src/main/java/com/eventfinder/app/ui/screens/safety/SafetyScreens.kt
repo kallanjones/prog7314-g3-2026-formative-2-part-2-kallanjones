@@ -1,5 +1,6 @@
 package com.eventfinder.app.ui.screens.safety
 
+import com.eventfinder.app.ui.theme.LocalAccentText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -435,7 +436,7 @@ private fun ActionSummary(
         Spacer(Modifier.width(12.dp))
         Text(label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
         Spacer(Modifier.weight(1f))
-        Text("$count", color = BrandGreen, fontWeight = FontWeight.Bold)
+        Text("$count", color = LocalAccentText.current, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -501,13 +502,13 @@ private fun ModerationRow(
                 Text(
                     text = if (report.resolved) "Resolved" else "Review",
                     style = MaterialTheme.typography.labelLarge,
-                    color = BrandGreen,
+                    color = LocalAccentText.current,
                     fontWeight = FontWeight.SemiBold
                 )
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.ArrowForwardIos,
                     contentDescription = null,
-                    tint = BrandGreen,
+                    tint = LocalAccentText.current,
                     modifier = Modifier
                         .padding(start = 4.dp)
                         .size(12.dp)

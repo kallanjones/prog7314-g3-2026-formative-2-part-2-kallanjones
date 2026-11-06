@@ -1,5 +1,6 @@
 package com.eventfinder.app.ui.screens.tickets
 
+import com.eventfinder.app.ui.theme.LocalAccentText
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -52,7 +53,8 @@ import com.eventfinder.app.utils.DateTimeUtils
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-private val BrandGreen = AccentGreen
+private val BrandGreen: Color
+    @Composable get() = LocalAccentText.current
 
 /**
  * "My Tickets" — every ticket the signed-in user holds, with its QR code.

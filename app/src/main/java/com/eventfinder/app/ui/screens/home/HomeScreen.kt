@@ -1,5 +1,6 @@
 ﻿package com.eventfinder.app.ui.screens.home
 
+import com.eventfinder.app.ui.theme.LocalAccentText
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
@@ -312,7 +313,7 @@ fun HomeScreen(
                             Text(
                                 text = "Finder",
                                 fontWeight = FontWeight.ExtraBold,
-                                color = MaterialTheme.colorScheme.primary,
+                                color = LocalAccentText.current,
                                 style = MaterialTheme.typography.titleLarge
                             )
                         }
@@ -387,7 +388,7 @@ fun HomeScreen(
                     Text(
                         "Syncing…",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = LocalAccentText.current,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
                     )
                 } else if (state.lastRefreshAt > 0L) {
@@ -717,7 +718,7 @@ private fun ColumnScope.EventList(
                     Icon(
                         imageVector = Icons.AutoMirrored.Outlined.TrendingUp,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = LocalAccentText.current
                     )
                 }
             }
@@ -750,7 +751,7 @@ private fun ColumnScope.EventList(
                         text = "See All  \u2192",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = LocalAccentText.current,
                         modifier = Modifier
                             .clip(RoundedCornerShape(50))
                             .clickable(onClick = onSeeAll)
@@ -822,7 +823,7 @@ private fun ColumnScope.EventList(
                                 onClick = { onCollectionSelect(chip.collection.id) },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-                                    selectedLabelColor = MaterialTheme.colorScheme.primary
+                                    selectedLabelColor = LocalAccentText.current
                                 ),
                                 label = {
                                     Text(
@@ -1424,7 +1425,7 @@ private fun DiscoveryCard(
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = LocalAccentText.current,
                         modifier = Modifier
                             .align(Alignment.Center)
                             .size(30.dp)
@@ -1824,7 +1825,7 @@ private fun FilterSheet(
                             text = if (minRating == 0) "Any rating" else "$minRating+ stars",
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = LocalAccentText.current
                         )
                         Spacer(Modifier.width(4.dp))
                         Image(

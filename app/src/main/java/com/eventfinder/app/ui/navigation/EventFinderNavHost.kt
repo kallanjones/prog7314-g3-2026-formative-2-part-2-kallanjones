@@ -1,5 +1,6 @@
 ﻿package com.eventfinder.app.ui.navigation
 
+import com.eventfinder.app.ui.theme.LocalAccentText
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -61,11 +62,14 @@ import androidx.navigation.navArgument
 import com.eventfinder.app.R
 import com.eventfinder.app.di.AppContainer
 import com.eventfinder.app.ui.components.CreatePngButton
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.withContext
 import com.eventfinder.app.ui.screens.auth.LoginScreen
 import com.eventfinder.app.ui.screens.auth.RegisterScreen
 import com.eventfinder.app.ui.screens.create.CreateEventScreen
 import com.eventfinder.app.ui.screens.detail.EventDetailScreen
+import com.eventfinder.app.ui.screens.rating.ContentRatingScreen
 import com.eventfinder.app.ui.screens.editprofile.EditProfileScreen
 import com.eventfinder.app.ui.screens.favorites.FavoritesScreen
 import com.eventfinder.app.ui.screens.groups.GroupPlanningScreen
@@ -106,6 +110,7 @@ object AppDestinations {
 
     // 2026 feature set
     const val REPORT_SCAM = "reportScam/{targetId}"
+    const val CONTENT_RATING = "contentRating/{eventId}"
     const val MODERATION = "moderation"
     const val ACCESSIBILITY = "accessibility"
     const val ACCESSIBILITY_PROFILE = "accessibilityProfile"
@@ -125,6 +130,7 @@ object AppDestinations {
     fun ticketScanner(eventId: String) = "ticketScanner/$eventId"
     fun organizerProfile(organizerId: String) = "organizerProfile/$organizerId"
     fun reportScam(targetId: String) = "reportScam/$targetId"
+    fun contentRating(eventId: String) = "contentRating/$eventId"
 }
 
 /**
@@ -181,8 +187,12 @@ fun EventFinderNavHost(
             if (requestGuestLogin) {
                 androidx.compose.runtime.LaunchedEffect(Unit) {
                     container.authRepository.continueAsGuest()
-                    navController.navigate(AppDestinations.MAIN) {
-                        popUpTo(AppDestinations.LOGIN) { inclusive = true }
+                    // Creating the guest session suspends while Room writes, so
+                    // pin the navigation back to the main thread before it runs.
+                    withContext(Dispatchers.Main) {
+                        navController.navigate(AppDestinations.MAIN) {
+                            popUpTo(AppDestinations.LOGIN) { inclusive = true }
+                        }
                     }
                 }
             }
@@ -228,6 +238,7 @@ fun EventFinderNavHost(
                                 onOpenScanner = { navController.navigate(AppDestinations.ticketScanner(it)) },
                                 onOrganizerClick = { navController.navigate(AppDestinations.organizerProfile(it)) },
                                 onReportEvent = { navController.navigate(AppDestinations.reportScam(it)) },
+                                onRateEvent = { navController.navigate(AppDestinations.contentRating(it)) },
                                 onOpenEvent = { navController.navigate(AppDestinations.eventDetail(it)) }
                             )
                         }
@@ -374,6 +385,17 @@ fun EventFinderNavHost(
                         }
 
                         composable(
+                            route = AppDestinations.CONTENT_RATING,
+                            arguments = listOf(navArgument("eventId") { type = NavType.StringType })
+                        ) { entry ->
+                            ContentRatingScreen(
+                                container = container,
+                                eventId = entry.arguments?.getString("eventId").orEmpty(),
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        composable(
                             route = AppDestinations.TICKET_SCANNER,
                             arguments = listOf(navArgument("eventId") { type = NavType.StringType })
                         ) { entry ->
@@ -489,7 +511,7 @@ private fun EventFinderBottomBar(
                                 },
                                 contentDescription = stringResource(destination.labelRes),
                                 tint = if (selected) {
-                                    MaterialTheme.colorScheme.primary
+                                    LocalAccentText.current
                                 } else {
                                     MaterialTheme.colorScheme.onSurfaceVariant
                                 },
@@ -511,7 +533,7 @@ private fun EventFinderBottomBar(
                         },
                         color = when {
                             isCreate -> MaterialTheme.colorScheme.onSurface
-                            selected -> MaterialTheme.colorScheme.primary
+                            selected -> LocalAccentText.current
                             else -> MaterialTheme.colorScheme.onSurfaceVariant
                         }
                     )

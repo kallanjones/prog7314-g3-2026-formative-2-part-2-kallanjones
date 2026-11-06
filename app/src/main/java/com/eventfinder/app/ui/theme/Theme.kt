@@ -11,6 +11,8 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -18,6 +20,15 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
+/**
+ * Colour for small accent text and glyphs sitting on a surface.
+ *
+ * The brand emerald (#00C98D) reads well on the night background but only
+ * reaches ~1.9:1 on white, so light mode keeps the deeper #007749 for text
+ * while buttons and other filled controls use [ColorScheme.primary] as-is.
+ */
+val LocalAccentText = staticCompositionLocalOf { BrandGreen }
 
 private val EventFinderTypography = Typography(
     displayLarge = TextStyle(
@@ -109,8 +120,10 @@ private val EventFinderTypography = Typography(
 )
 
 private val LightColors = lightColorScheme(
-    primary = BrandGreen,
-    onPrimary = Color.White,
+    // Same emerald as dark mode so filled buttons, chips and switches look
+    // identical across themes; small text uses [LocalAccentText] instead.
+    primary = Color(0xFF00C98D),
+    onPrimary = Color(0xFF003820),
     primaryContainer = Color(0xFFD8F2E5),
     onPrimaryContainer = Color(0xFF002817),
 
@@ -158,21 +171,21 @@ private val DarkColors = darkColorScheme(
     tertiaryContainer = Color(0xFF182A86),
     onTertiaryContainer = Color(0xFFE0E5FF),
 
-    // 2026 dark palette: #0B1929 background, #14203A surface, #1E2A44 raised
-    // cards, #2D3E52 borders and the blue-grey secondary text.
+    // 2026 dark palette: #0B1929 background, #13293D surface, #1E2A44 raised
+    // cards, #203852 borders and the blue-grey secondary text.
     background = Color(0xFF0B1929),
     onBackground = Color(0xFFFFFFFF),
 
-    surface = Color(0xFF14203A),
+    surface = Color(0xFF13293D),
     onSurface = Color(0xFFFFFFFF),
 
     surfaceVariant = Color(0xFF1E2A44),
-    onSurfaceVariant = Color(0xFFA6B8D1),
+    onSurfaceVariant = Color(0xFFA8B5D3),
 
-    outline = Color(0xFF2D3E52),
-    outlineVariant = Color(0xFF24334A),
+    outline = Color(0xFF203852),
+    outlineVariant = Color(0xFF1B2C3F),
 
-    error = Color(0xFFEF4444),
+    error = Color(0xFFFF4444),
     onError = Color(0xFFFFFFFF)
 )
 
@@ -230,10 +243,19 @@ fun EventFinderTheme(
         else -> LightColors
     }
 
-    MaterialTheme(
-        colorScheme = colors,
-        typography = EventFinderTypography,
-        shapes = EventFinderShapes,
-        content = content
-    )
+    val accentText = when {
+        highContrast && darkTheme -> Color.White
+        highContrast -> Color.Black
+        darkTheme -> Color(0xFF00C98D)
+        else -> BrandGreen
+    }
+
+    CompositionLocalProvider(LocalAccentText provides accentText) {
+        MaterialTheme(
+            colorScheme = colors,
+            typography = EventFinderTypography,
+            shapes = EventFinderShapes,
+            content = content
+        )
+    }
 }
