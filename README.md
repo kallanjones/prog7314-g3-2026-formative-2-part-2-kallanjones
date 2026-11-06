@@ -28,7 +28,7 @@ paid infrastructure; Firebase Storage is optional and falls back to local file s
 
 ## Demonstration video
 
-https://youtu.be/8Hr-pQSrUFs
+https://youtu.be/tdoCYBrwc7Y
 
 Covers sign-in including Google SSO, the settings menu, the data round trip against the
 hosted REST API, and the user-defined features.
