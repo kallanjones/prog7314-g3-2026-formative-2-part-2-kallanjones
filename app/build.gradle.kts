@@ -47,7 +47,7 @@ android {
         buildConfigField(
             "String",
             "API_BASE_URL",
-            "\"${project.findProperty("EVENTFINDER_API_URL") ?: "https://eventfinder-api-o1t1.onrender.com/"}\""
+            "\"${project.findProperty("EVENTFINDER_API_URL") ?: "https://eventfinder-api-si8u.onrender.com/"}\""
         )
         // OAuth web client ID for Credential Manager Google sign-in. This is a
         // *public* value (it ships in the APK and is listed in the README), so it
@@ -99,7 +99,7 @@ android {
             buildConfigField(
                 "String",
                 "API_BASE_URL",
-                "\"${project.findProperty("EVENTFINDER_API_DEBUG_URL") ?: "https://eventfinder-api-o1t1.onrender.com/"}\""
+                "\"${project.findProperty("EVENTFINDER_API_DEBUG_URL") ?: "https://eventfinder-api-si8u.onrender.com/"}\""
             )
         }
         release {
@@ -117,7 +117,7 @@ android {
             buildConfigField(
                 "String",
                 "API_BASE_URL",
-                "\"${project.findProperty("EVENTFINDER_API_STAGING_URL") ?: "https://eventfinder-api-o1t1.onrender.com/"}\""
+                "\"${project.findProperty("EVENTFINDER_API_STAGING_URL") ?: "https://eventfinder-api-si8u.onrender.com/"}\""
             )
             matchingFallbacks += listOf("release")
         }

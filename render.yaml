@@ -54,3 +54,13 @@ services:
 
       - key: AzureStorage__PublicBaseUrl
         sync: false
+
+      # Firebase Admin service account (whole JSON on one line). Needed for the
+      # Firestore sync token and the new-event push. Entered in the dashboard.
+      - key: Firebase__ServiceAccountJson
+        sync: false
+
+      # Brevo key for password-reset emails. Without it the API logs the email
+      # instead of sending it.
+      - key: Brevo__ApiKey
+        sync: false
